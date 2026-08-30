@@ -147,6 +147,14 @@ final class ArticleFetcher {
             return []
         }
 
+        // A pasted YouTube watch link is already a story. Rendering it in
+        // WebKit first lands on Google's consent page, whose copy can look
+        // like a real headline. Ask YouTube's public oEmbed endpoint for the
+        // video's title instead, without needing an API key.
+        if Self.isYouTubeVideoURL(url), let videoStory = await fetchYouTubeVideo(source: source, url: url) {
+            return [videoStory]
+        }
+
         if let feedStories = await fetchFeedStories(from: source, url: url, limit: limit), !feedStories.isEmpty {
             return feedStories
         }
@@ -185,6 +193,7 @@ final class ArticleFetcher {
                 // mention cookies outright — Ars serves one whose heading is
                 // "We and our partners process data for the following purposes".
                 'we and our partners', 'process data', 'we value your privacy',
+                'this page describes the purposes for which google uses cookies',
                 // Site chrome that reads like a headline: logo links ("Ars
                 // Technica homepage"), skip links, and ad slots.
                 'homepage', 'skip to content', 'skip to main content',
@@ -456,6 +465,33 @@ final class ArticleFetcher {
                 imageURL: row["image"] as? String
             )
         }
+    }
+
+    private static func isYouTubeVideoURL(_ url: URL) -> Bool {
+        let host = url.host?.lowercased() ?? ""
+        if host == "youtu.be" || host.hasSuffix(".youtu.be") { return !url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).isEmpty }
+        guard host == "youtube.com" || host.hasSuffix(".youtube.com") else { return false }
+        let hasVideoID = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains(where: { $0.name == "v" && !($0.value ?? "").isEmpty }) == true
+        return (url.path == "/watch" && hasVideoID) || url.path.hasPrefix("/shorts/") || url.path.hasPrefix("/embed/")
+    }
+
+    private func fetchYouTubeVideo(source: TrackedSource, url: URL) async -> Story? {
+        guard var components = URLComponents(string: "https://www.youtube.com/oembed") else { return nil }
+        components.queryItems = [
+            URLQueryItem(name: "url", value: url.absoluteString),
+            URLQueryItem(name: "format", value: "json")
+        ]
+        guard let endpoint = components.url else { return nil }
+        var request = URLRequest(url: endpoint)
+        request.timeoutInterval = 8
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let httpResponse = response as? HTTPURLResponse,
+              (200..<400).contains(httpResponse.statusCode),
+              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let title = payload["title"] as? String,
+              !title.isEmpty else { return nil }
+        let sourceName = source.name.isEmpty ? "YouTube" : source.name
+        return Story(title: title, storyURL: url.absoluteString, sourceID: source.id, sourceName: sourceName, imageURL: payload["thumbnail_url"] as? String)
     }
 
     /// Reads RSS 2.0 and Atom URLs directly. A direct feed is both faster and
