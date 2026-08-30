@@ -453,7 +453,7 @@ final class ArticleFetcher {
         """
         let rows = decodeJSONArray(await evaluateJSON(webView, script: script))
         let sourceName = source.name.isEmpty ? (url.host ?? source.url) : source.name
-        return rows.compactMap { row in
+        let stories: [Story] = rows.compactMap { row in
             guard let title = row["title"] as? String, let storyURL = row["url"] as? String else {
                 return nil
             }
@@ -465,6 +465,18 @@ final class ArticleFetcher {
                 imageURL: row["image"] as? String
             )
         }
+        if !stories.isEmpty { return stories }
+
+        // Some sources are single watch pages rather than index pages. If
+        // the headline scan found no links, use the document's own title as
+        // one queue item instead of returning an empty source. This covers
+        // movie pages and channel landing pages whose markup is app-driven.
+        let fallbackTitle = (decodeJSONObject(await evaluateJSON(webView, script: "({ title: document.title })"))?["title"] as? String)
+            ?? url.lastPathComponent.replacingOccurrences(of: "-", with: " ").capitalized
+        guard !fallbackTitle.isEmpty,
+              !fallbackTitle.localizedCaseInsensitiveContains("google uses cookies"),
+              !fallbackTitle.localizedCaseInsensitiveContains("privacy & terms") else { return [] }
+        return [Story(title: fallbackTitle, storyURL: url.absoluteString, sourceID: source.id, sourceName: sourceName)]
     }
 
     private static func isYouTubeVideoURL(_ url: URL) -> Bool {

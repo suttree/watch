@@ -48,7 +48,7 @@ public struct Story: Identifiable, Codable, Equatable, Sendable {
 
     private static func videoInfo(for rawURL: String) -> VideoInfo? {
         guard let host = URL(string: rawURL)?.host?.lowercased() else { return nil }
-        let videoHosts = ["youtube.com", "youtu.be", "vimeo.com", "player.vimeo.com", "loom.com"]
+        let videoHosts = ["youtube.com", "youtu.be", "vimeo.com", "player.vimeo.com", "loom.com", "cinejoy.to", "popcornmovies.ac"]
         guard videoHosts.contains(where: { host == $0 || host.hasSuffix("." + $0) }) else { return nil }
         return VideoInfo(url: rawURL)
     }
