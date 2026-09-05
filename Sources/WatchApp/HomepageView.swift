@@ -165,6 +165,7 @@ struct HomepageView: View {
             if activeVideoID != story.id {
                 stopPlayback()
                 activeVideoID = story.id
+                listFocused = false
             }
         } else { NSWorkspace.shared.open(url) }
     }

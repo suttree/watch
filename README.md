@@ -11,6 +11,9 @@ Firefox bookmarks.
   timestamps. Only one video plays at a time. Switching tabs or pages stops it.
 - **Other:** all remaining bookmarks, including channel pages and search results.
 - Use the open-original icon beside any title to open it in your browser.
+- During playback, left/right arrows seek five seconds. Use the player's
+  fullscreen button to expand the video and Esc to return. The CC button
+  toggles captions when available.
 - The trash icon removes an item locally. Removals survive refreshes and
   restarts. Use **Undo** or **Restore removed items** in Settings to bring them back.
 
