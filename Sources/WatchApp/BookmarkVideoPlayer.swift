@@ -5,10 +5,9 @@ import WatchCore
 struct BookmarkVideoPlayer: NSViewRepresentable {
     let video: YouTubeVideo
     var autoplay = false
-    var playbackChanged: (Bool) -> Void
     var failed: (String) -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(playbackChanged: playbackChanged, failed: failed) }
+    func makeCoordinator() -> Coordinator { Coordinator(failed: failed) }
 
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -24,7 +23,6 @@ struct BookmarkVideoPlayer: NSViewRepresentable {
         function send(value) { window.webkit.messageHandlers.watchPlayer.postMessage(value); }
         function onYouTubeIframeAPIReady() {
           new YT.Player('player', {events: {
-            onStateChange: function(event) { send({playing:event.data === 1}); },
             onError: function(event) { send({error:event.data}); }
           }});
         }
@@ -36,24 +34,19 @@ struct BookmarkVideoPlayer: NSViewRepresentable {
     func updateNSView(_ view: WKWebView, context: Context) {}
 
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
-        coordinator.playbackChanged(false)
         view.configuration.userContentController.removeScriptMessageHandler(forName: "watchPlayer")
         view.stopLoading()
         view.loadHTMLString("", baseURL: nil)
     }
 
     final class Coordinator: NSObject, WKScriptMessageHandler {
-        let playbackChanged: (Bool) -> Void
         let failed: (String) -> Void
-        init(playbackChanged: @escaping (Bool) -> Void, failed: @escaping (String) -> Void) {
-            self.playbackChanged = playbackChanged
+        init(failed: @escaping (String) -> Void) {
             self.failed = failed
         }
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let payload = message.body as? [String: Any] else { return }
-            if let playing = payload["playing"] as? Bool { playbackChanged(playing) }
             if let error = payload["error"] as? Int {
-                playbackChanged(false)
                 failed("YouTube couldn't play this video here, error \(error). Use the open-original icon next to the title.")
             }
         }

@@ -26,9 +26,9 @@ restrict embedding, require sign-in, or remove a video. **Open original** is
 available beside each title for those cases. Playback uses Watch's own web
 session, separate from Firefox.
 
-Watch keeps ratings, watched state, and its password in
-`~/Library/Application Support/Watch`. The previous website source list stays
-on disk but is no longer used by the bookmark feed.
+Watch opens straight into the feed and has no password or inactivity lock.
+Previous ratings, watched state, password verification, and website sources
+stay in `~/Library/Application Support/Watch` but are not used by the feed.
 
 ## Build and run
 

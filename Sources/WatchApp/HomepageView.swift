@@ -62,10 +62,7 @@ struct HomepageView: View {
                                     story: story,
                                     isSelected: story.id == selectedStoryID,
                                     isActive: story.id == activeVideoID,
-                                    activate: { activate(story) },
-                                    playbackChanged: { playing in
-                                        if activeVideoID == story.id { model.setVideoPlaying(playing) }
-                                    }
+                                    activate: { activate(story) }
                                 )
                                 .id(story.id)
                             }
@@ -151,7 +148,6 @@ struct HomepageView: View {
 
     private func stopPlayback() {
         activeVideoID = nil
-        model.setVideoPlaying(false)
     }
 
     private func reset(_ proxy: ScrollViewProxy) {
@@ -188,7 +184,6 @@ private struct FeedBookmarkRow: View {
     let isSelected: Bool
     let isActive: Bool
     let activate: () -> Void
-    let playbackChanged: (Bool) -> Void
     @Environment(\.readerTheme) private var theme
     @State private var playbackError: String?
 
@@ -223,7 +218,6 @@ private struct FeedBookmarkRow: View {
             if let video {
                 if isActive {
                     BookmarkVideoPlayer(video: video, autoplay: true,
-                                        playbackChanged: playbackChanged,
                                         failed: { playbackError = $0 })
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .frame(minHeight: 200)

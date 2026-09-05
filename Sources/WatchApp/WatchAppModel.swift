@@ -59,23 +59,7 @@ final class WatchAppModel: ObservableObject {
     /// Empty until the ranker has enough votes to say anything.
     @Published private(set) var scoreByStoryID: [String: Double] = [:]
 
-    @Published var isUnlocked = false
-    @Published var isUnlocking = false
-    @Published var hasStoredPassword = false
-    @Published var passwordErrorMessage: String?
-    @Published var isLockedByInactivity = false
-    private static let inactivityLockInterval: TimeInterval = 600
-    private var inactivityTimer: Timer?
-    private var isVideoPlaying = false
-
-    func setVideoPlaying(_ playing: Bool) {
-        isVideoPlaying = playing
-        resetInactivityTimer()
-    }
-    private var activityMonitor: Any?
-
     private let sourceStore: SourceStore
-    private let secretStore: PasswordProtectedSecretStore
     private let voteStore: VoteStore
     private let readStateStore: WatchStateStore
     private let articleCacheStore: ArticleCacheStore
@@ -105,7 +89,6 @@ final class WatchAppModel: ObservableObject {
     init() {
         let store = FileSourceStore(fileURL: Self.sourcesFileURL())
         sourceStore = store
-        secretStore = PasswordProtectedSecretStore(fileURL: Self.secretFileURL())
         let votes = FileVoteStore(fileURL: Self.votesFileURL())
         voteStore = votes
         let readState = FileWatchStateStore(fileURL: Self.readStateFileURL())
@@ -113,7 +96,6 @@ final class WatchAppModel: ObservableObject {
         let articleCacheFile = FileArticleCacheStore(fileURL: Self.articleCacheFileURL())
         articleCacheStore = articleCacheFile
         sources = [bookmarkSource]
-        hasStoredPassword = secretStore.hasStoredPassword
         voteHistory = (try? votes.loadVotes()) ?? []
         ranker = NaiveBayesRanker(votes: voteHistory)
         readStoryIDs = Set((try? readState.loadState())?.readIDs ?? [])
@@ -379,88 +361,6 @@ final class WatchAppModel: ObservableObject {
         scoreByStoryID = stories.reduce(into: [:]) { scores, story in
             scores[story.id] = ranker.score(title: story.title, sourceName: story.sourceName, excerpt: story.excerpt)
         }
-    }
-
-    private static func secretFileURL() -> URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return appSupport.appendingPathComponent("Watch", isDirectory: true).appendingPathComponent("secret.encrypted")
-    }
-
-    // MARK: - Lock screen
-
-    func unlock(password: String) {
-        guard !isUnlocking, !isUnlocked else {
-            return
-        }
-        isUnlocking = true
-        passwordErrorMessage = nil
-        do {
-            if secretStore.hasStoredPassword {
-                try secretStore.unlock(password: password)
-            } else {
-                try secretStore.createPassword(password)
-            }
-            isUnlocked = true
-            startInactivityMonitoring()
-        } catch {
-            passwordErrorMessage = error.localizedDescription
-        }
-        isUnlocking = false
-    }
-
-    /// Re-verifies the password after an inactivity auto-lock, without
-    /// tearing down or reloading anything else — stories, caches, and the
-    /// current page all stay exactly as they were underneath.
-    func unlockFromInactivityLock(password: String) {
-        guard isLockedByInactivity, !isUnlocking else {
-            return
-        }
-        isUnlocking = true
-        passwordErrorMessage = nil
-        do {
-            try secretStore.unlock(password: password)
-            isLockedByInactivity = false
-            resetInactivityTimer()
-        } catch {
-            passwordErrorMessage = error.localizedDescription
-        }
-        isUnlocking = false
-    }
-
-    private func startInactivityMonitoring() {
-        guard activityMonitor == nil else {
-            return
-        }
-        resetInactivityTimer()
-        activityMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.mouseMoved, .leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown, .scrollWheel]
-        ) { [weak self] event in
-            self?.resetInactivityTimer()
-            return event
-        }
-    }
-
-    private func resetInactivityTimer() {
-        inactivityTimer?.invalidate()
-        inactivityTimer = nil
-        guard isUnlocked, !isLockedByInactivity, !isVideoPlaying else {
-            return
-        }
-        inactivityTimer = Timer.scheduledTimer(withTimeInterval: Self.inactivityLockInterval, repeats: false) { [weak self] _ in
-            Task { @MainActor in
-                self?.lockDueToInactivity()
-            }
-        }
-    }
-
-    private func lockDueToInactivity() {
-        guard isUnlocked, !isLockedByInactivity else {
-            return
-        }
-        secretStore.lock()
-        isLockedByInactivity = true
-        inactivityTimer?.invalidate()
-        inactivityTimer = nil
     }
 
     // MARK: - Sources
