@@ -15,6 +15,8 @@ final class WatchAppModel: ObservableObject {
     }
 
     @Published var sources: [TrackedSource] = []
+    @Published var bookmarkStatus = "Firefox bookmarks / tv"
+    private let bookmarkSource = TrackedSource(id: FirefoxBookmarks.sourceID, url: "Firefox bookmarks / tv", name: "Firefox · tv")
     @Published var stories: [Story] = []
     @Published var isRefreshing = false
     @Published var refreshStatus: String?
@@ -71,6 +73,12 @@ final class WatchAppModel: ObservableObject {
     @Published var isLockedByInactivity = false
     private static let inactivityLockInterval: TimeInterval = 600
     private var inactivityTimer: Timer?
+    private var isVideoPlaying = false
+
+    func setVideoPlaying(_ playing: Bool) {
+        isVideoPlaying = playing
+        resetInactivityTimer()
+    }
     private var activityMonitor: Any?
 
     private let sourceStore: SourceStore
@@ -111,7 +119,7 @@ final class WatchAppModel: ObservableObject {
         readStateStore = readState
         let articleCacheFile = FileArticleCacheStore(fileURL: Self.articleCacheFileURL())
         articleCacheStore = articleCacheFile
-        sources = (try? store.loadSources()) ?? []
+        sources = [bookmarkSource]
         hasStoredPassword = secretStore.hasStoredPassword
         voteHistory = (try? votes.loadVotes()) ?? []
         ranker = NaiveBayesRanker(votes: voteHistory)
@@ -261,7 +269,7 @@ final class WatchAppModel: ObservableObject {
     /// Until the ranker has enough ratings to score anything, every bolt is
     /// lit and Feed matches All minus whatever's been read.
     func visibleStories(from allStories: [Story]) -> [Story] {
-        let candidates = ratedCandidates(from: allStories)
+        let candidates = ratedCandidates(from: feedMode == .feed ? allStories.filter { $0.video != nil } : allStories)
         guard feedMode == .feed else {
             // A story with a real, page-stated publish date sorts by that.
             // A story without one sorts after every dated story, rather than
@@ -480,7 +488,7 @@ final class WatchAppModel: ObservableObject {
     private func resetInactivityTimer() {
         inactivityTimer?.invalidate()
         inactivityTimer = nil
-        guard isUnlocked, !isLockedByInactivity else {
+        guard isUnlocked, !isLockedByInactivity, !isVideoPlaying else {
             return
         }
         inactivityTimer = Timer.scheduledTimer(withTimeInterval: Self.inactivityLockInterval, repeats: false) { [weak self] _ in
@@ -545,6 +553,32 @@ final class WatchAppModel: ObservableObject {
     // MARK: - Homepage refresh
 
     func refresh() async {
+        await refreshBookmarks()
+    }
+
+    private func refreshBookmarks() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        lastRefreshError = nil
+        refreshStatus = "Reading Firefox tv bookmarks…"
+        defer { isRefreshing = false; refreshStatus = nil; refreshProgress = 1 }
+        do {
+            let loaded = try await Task.detached { try FirefoxBookmarks.load() }.value
+            stories = loaded
+            sources = [bookmarkSource]
+            let count = loaded.filter { $0.video != nil }.count
+            bookmarkStatus = "\(count) videos · \(loaded.count - count) other bookmarks"
+            ratingByStoryID = voteHistory.reduce(into: [:]) { states, record in
+                if let id = record.storyID { states[id] = record.isUpvote }
+            }
+            recomputeRanking()
+            goHome()
+        } catch {
+            lastRefreshError = "Couldn't sync Firefox tv bookmarks. \(error.localizedDescription)"
+        }
+    }
+
+    private func refreshLegacySources() async {
         guard !isRefreshing, !sources.isEmpty else {
             return
         }

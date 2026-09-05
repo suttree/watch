@@ -8,6 +8,7 @@ struct PermalinkView: View {
     @Environment(\.readerTheme) private var theme
     @State private var article: Article?
     @State private var isLoadingArticle = false
+    @State private var playbackError: String?
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -29,7 +30,15 @@ struct PermalinkView: View {
                     .foregroundStyle(theme.ink)
                     .shadow(color: .white, radius: 1, x: 0, y: 1)
 
-                if isLoadingArticle {
+                if let url = URL(string: story.storyURL), let video = YouTubeVideo(url: url) {
+                    BookmarkVideoPlayer(video: video, playbackChanged: model.setVideoPlaying, failed: { playbackError = $0 })
+                        .frame(height: 360)
+                    Text(playbackError ?? "If playback is restricted, use Open original below.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button(model.isRead(story) ? "Mark unwatched" : "Mark watched") { model.toggleRead(story) }
+                } else if story.sourceID == FirefoxBookmarks.sourceID {
+                    Text("This bookmark opens on its original website.")
+                } else if isLoadingArticle {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
                         Text("Fetching article…")
@@ -94,7 +103,7 @@ struct PermalinkView: View {
 
                 if let url = URL(string: story.storyURL) {
                     Link(destination: url) {
-                        Label("Read Original", systemImage: "arrow.up.right.square")
+                        Label("Open original", systemImage: "arrow.up.right.square")
                     }
                     .font(ReaderTheme.sans(13, weight: .medium))
                     .padding(.top, 12)
@@ -185,11 +194,12 @@ struct PermalinkView: View {
             // Opening a story is what takes it off the Feed queue — the
             // permalink is the one place in the app that's unambiguously "you
             // read this."
-            model.markRead(story)
+            if story.sourceID != FirefoxBookmarks.sourceID { model.markRead(story) }
         }
         .task {
-            await loadArticle()
+            if story.sourceID != FirefoxBookmarks.sourceID { await loadArticle() }
         }
+        .onDisappear { model.setVideoPlaying(false) }
     }
 
     private var previousStory: Story? {

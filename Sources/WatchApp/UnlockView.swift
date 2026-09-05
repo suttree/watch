@@ -27,7 +27,7 @@ struct UnlockView: View {
             // down at the foot of the same screen.
             VStack(spacing: 10) {
                 CandleMark(height: 54, opacity: 0.75)
-                    Text("Read")
+                    Text("Watch")
                         .font(BrandTypeface.wordmark(22))
                         .embossedText()
                     .foregroundStyle(theme.ink)

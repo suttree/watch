@@ -159,7 +159,7 @@ struct HomepageView: View {
                                     }
 
                                     if model.stories.isEmpty, !model.isRefreshing {
-                                        Text("No stories yet — hit refresh to pull the latest from your tracked sources.")
+                                        Text("No bookmarks yet. Add videos to Firefox's tv folder, then refresh.")
                                             .font(ReaderTheme.sans(14))
                                             .foregroundStyle(theme.inkSecondary)
                                             .embossedText()
@@ -597,6 +597,16 @@ private struct StoryRow: View {
                     .embossedText()
 
                 if let video = story.video {
+                    if let address = story.imageURL, let url = URL(string: address) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFit()
+                        } placeholder: {
+                            Rectangle().fill(theme.paperInset).overlay(Image(systemName: "play.rectangle"))
+                        }
+                        .frame(height: 150)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .onTapGesture(perform: select)
+                    }
                     HStack(spacing: 6) {
                         Image(systemName: "play.fill")
                         Text("VIDEO")
@@ -765,7 +775,7 @@ private struct FeedModeBar: View {
     @Environment(\.readerTheme) private var theme
 
     private let options: [(WatchAppModel.FeedMode, String)] = [
-        (.feed, "Highlights"), (.all, "All")
+        (.feed, "Videos"), (.all, "All")
     ]
 
     var body: some View {
