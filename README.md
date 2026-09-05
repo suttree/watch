@@ -2,41 +2,30 @@
 
 A macOS app for watching videos saved in Firefox's `tv` bookmark folder.
 
-Watch syncs the folder when it opens and whenever you refresh. It reads a
-temporary copy of Firefox's bookmark database and recent changes, so Firefox
-can stay open. It never edits Firefox bookmarks.
+Create a `tv` folder in Firefox's Bookmarks Toolbar or Menu. Watch imports it
+and its subfolders on launch and refresh, with the newest bookmarks first.
+Firefox can stay open. No extension is required, and Watch never edits your
+Firefox bookmarks.
 
-Watch keeps its own snapshot at
-`~/Library/Application Support/Watch/bookmarkLibrary.json`, so saved items
-remain available if Firefox cannot be read. Sync updates that snapshot.
-The trash icon removes an item from Watch only. Removals survive syncs and
-restarts, even if a YouTube bookmark's title or timestamp changes. Use **Undo**
-after removing an item, or **Restore removed items** in Settings. No extension
-is required, and the original Firefox bookmarks stay intact.
+- **YouTube:** click a title or thumbnail to play inline, including saved
+  timestamps. Only one video plays at a time. Switching tabs or pages stops it.
+- **Other:** all remaining bookmarks, including channel pages and search results.
+- Use the open-original icon beside any title to open it in your browser.
+- The trash icon removes an item locally. Removals survive refreshes and
+  restarts. Use **Undo** or **Restore removed items** in Settings to bring them back.
 
-The **YouTube** tab contains direct YouTube video bookmarks with thumbnails.
-Click a title or thumbnail to play in that row. Saved timestamps are preserved.
-Only one player is open at a time. Changing tabs or pages stops playback.
-The **Other** tab contains the remaining bookmarks. An open-original icon
-beside each title opens the bookmark in your browser. There are no rating
-controls, video badges, or separate video pages.
+Watch keeps its local library at
+`~/Library/Application Support/Watch/bookmarkLibrary.json`, available even
+when Firefox cannot be read. Duplicate YouTube links appear only once.
 
-The folder can live in Firefox's Bookmarks Toolbar or Menu. Subfolders are
-included. If several folders are called `tv`, Watch selects the one closest
-to the toolbar or menu. It checks Firefox's default installed profile first.
-Both tabs sort by bookmark date, newest first. Duplicate YouTube links collapse
-to the most recently saved one. Old ratings and watched state do not affect
-which bookmarks appear or their order.
+Watch opens straight into the feed, with no password or inactivity lock.
+Its transparent window icon uses black lines in light mode and automatically
+switches to white in dark mode while running in the Dock. Finder uses the
+bundled black icon.
 
-Channel pages and search results remain ordinary bookmarks. Watch does not
-fetch a channel's uploads or extract streams from other sites. YouTube can
-restrict embedding, require sign-in, or remove a video. **Open original** is
-available beside each title for those cases. Playback uses Watch's own web
-session, separate from Firefox.
-
-Watch opens straight into the feed and has no password or inactivity lock.
-Previous ratings, watched state, password verification, and website sources
-stay in `~/Library/Application Support/Watch` but are not used by the feed.
+Watch does not fetch channel uploads or extract video from other sites.
+Some YouTube videos block embedding or require sign-in. Use open-original
+for these. Playback uses a separate session from Firefox.
 
 ## Build and run
 
@@ -54,4 +43,5 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-sa
 ```
 
 Set `WATCH_VERIFY_FIREFOX=1` to also test a snapshot of your local `tv` folder.
-The normal suite uses a temporary fixture database.
+The normal suite tests bookmark handling with temporary fixtures and checks
+transparency in both icon colour variants.
