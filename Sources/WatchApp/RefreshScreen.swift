@@ -33,7 +33,7 @@ struct RefreshScreen: View {
                     // Resolved as a symbol rather than stroked by hand: it
                     // keeps the tint and weight of a real view while still
                     // being positioned off the same clock as everything else.
-                    CandleMark(height: 74, opacity: 0.8)
+                    WindowMark(height: 74, opacity: 0.8)
                         .tag(Self.horseSymbol)
                 }
             }

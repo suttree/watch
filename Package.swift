@@ -23,6 +23,10 @@ let package = Package(
         .testTarget(
             name: "WatchCoreTests",
             dependencies: ["WatchCore"]
+        ),
+        .testTarget(
+            name: "WatchAppTests",
+            dependencies: ["WatchApp"]
         )
     ]
 )

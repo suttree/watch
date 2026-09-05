@@ -426,7 +426,7 @@ private struct PolkaDotTexture: View {
 /// in-memory NSApplication property macOS has no reason to remember on its
 /// own.
 enum AppIconTheming {
-    private static let storageKey = "WatchThemeIconVariant"
+    @MainActor private static var appearanceObserver: NSKeyValueObservation?
 
     private static let artwork: NSImage? = {
         guard let url = Bundle.module.url(forResource: "AppIconArtwork", withExtension: "png") else {
@@ -437,112 +437,38 @@ enum AppIconTheming {
 
     @MainActor
     static func apply(_ theme: ReaderTheme) {
-        guard let image = themedIcon(theme) else {
-            return
-        }
-        NSApplication.shared.applicationIconImage = image
-        UserDefaults.standard.set(theme.id, forKey: storageKey)
+        let dark = NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        NSApplication.shared.applicationIconImage = windowIcon(dark: dark)
     }
 
     @MainActor
     static func applyStoredSelection() {
-        guard let stored = UserDefaults.standard.string(forKey: storageKey) else {
-            return
+        apply(.named("default"))
+        appearanceObserver = NSApplication.shared.observe(\.effectiveAppearance, options: [.new]) { _, _ in
+            Task { @MainActor in
+                apply(.named("default"))
+            }
         }
-        apply(ReaderTheme.named(stored))
     }
 
     static func themedIcon(_ theme: ReaderTheme, size: CGFloat = 512) -> NSImage? {
-        let image = NSImage(size: NSSize(width: size, height: size))
-        image.lockFocus()
-        defer { image.unlockFocus() }
-
-        // Apple's macOS icon grid leaves the rounded-square body at roughly
-        // 80% of the full canvas — inset any less and Read sits visibly
-        // larger than every other icon in the Dock.
-        let inset = size * 0.098
-        let squircleRect = NSRect(x: inset, y: inset, width: size - inset * 2, height: size - inset * 2)
-        // A superellipse rather than a rounded rect: macOS icon corners are
-        // continuous curves, and circular ones look wrong in the Dock.
-        let path = ThemePatternRenderer.squircle(in: squircleRect)
-
-        ThemePatternRenderer.fill(theme.iconStyle, in: path, stripeWidth: nil, starSeed: theme.starSeed)
-
-        // Keep the border inside the icon body so it reads as an inset keyline
-        // instead of a second outer edge that macOS can clip away.
-        let borderInset = size * 0.055
-        let borderPath = ThemePatternRenderer.squircle(in: squircleRect.insetBy(dx: borderInset, dy: borderInset))
-        NSColor.white.withAlphaComponent(0.86).setStroke()
-        borderPath.lineWidth = size * 0.012 + 3
-        borderPath.stroke()
-
-        if let artwork,
-           // Sized below the squircle edge so the candle stays clear of the
-           // corners while reading as the main mark.
-           let artworkImage = artworkImage(artwork, tint: theme.iconArtworkTint, fillFraction: 0.92, in: squircleRect.size) {
-            let drawRect = NSRect(
-                x: squircleRect.midX - artworkImage.size.width / 2,
-                y: squircleRect.midY - artworkImage.size.height / 2,
-                width: artworkImage.size.width,
-                height: artworkImage.size.height
-            )
-            artworkImage.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1.0)
-        }
-
-        return image
+        windowIcon(dark: false, size: size)
     }
 
-    /// Recolors the original candle artwork without adding a shadow or relief.
-    private static func artworkImage(_ artwork: NSImage, tint: NSColor, fillFraction: CGFloat, in bounds: NSSize) -> NSImage? {
-        let artworkAspect = artwork.size.width / max(artwork.size.height, 1)
-        let targetWidth: CGFloat
-        let targetHeight: CGFloat
-        if artworkAspect >= 1 {
-            targetWidth = bounds.width * fillFraction
-            targetHeight = targetWidth / artworkAspect
-        } else {
-            targetHeight = bounds.height * fillFraction
-            targetWidth = targetHeight * artworkAspect
-        }
-        let artSize = NSSize(width: targetWidth, height: targetHeight)
-
-        guard let main = tintedLayer(artwork, tint: tint, size: artSize) else {
-            return nil
-        }
-
-        let result = NSImage(size: artSize)
-        result.lockFocus()
-        main.draw(at: .zero, from: .zero, operation: .sourceOver, fraction: 1.0)
-        result.unlockFocus()
-        return result
-    }
-
-    /// Recolors the artwork's opaque pixels to `tint` (the classic
-    /// "template image" trick: paint the source, then fill with
-    /// `.sourceAtop` so only pixels the artwork already made opaque get
-    /// covered) — done on its own transparent image first, rather than
-    /// directly on the bands. Doing it directly on them doesn't work: that
-    /// background is already fully opaque, so `.sourceAtop` there matches
-    /// every pixel in the draw rect, not just the artwork's silhouette,
-    /// painting a solid tinted square instead of the artwork's shape.
-    private static func tintedLayer(_ artwork: NSImage, tint: NSColor, size: NSSize) -> NSImage? {
-        let result = NSImage(size: size)
+    static func windowIcon(dark: Bool, size: CGFloat = 512) -> NSImage? {
+        guard let artwork else { return nil }
+        let result = NSImage(size: NSSize(width: size, height: size))
         result.lockFocus()
         defer { result.unlockFocus() }
-        artwork.draw(in: NSRect(origin: .zero, size: size), from: .zero, operation: .sourceOver, fraction: 1.0)
-        guard let context = NSGraphicsContext.current else {
-            return nil
-        }
-        context.compositingOperation = .sourceAtop
-        tint.setFill()
-        NSBezierPath(rect: NSRect(origin: .zero, size: size)).fill()
-        context.compositingOperation = .sourceOver
+        let rect = NSRect(x: 0, y: 0, width: size, height: size)
+        artwork.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+        NSGraphicsContext.current?.compositingOperation = .sourceAtop
+        (dark ? NSColor.white : NSColor.black).setFill()
+        NSBezierPath(rect: rect).fill()
+        NSGraphicsContext.current?.compositingOperation = .sourceOver
         return result
     }
 }
-
-/// Rendered theme artwork, kept warm. Every pattern here is a seeded scatter
-/// field or a few hundred filled paths, and the header strip is asked for on
 /// each view update — regenerating either one per frame is the difference
 /// between a themed window and a stuttering one.
 @MainActor

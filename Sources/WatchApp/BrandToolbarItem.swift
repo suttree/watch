@@ -21,7 +21,7 @@ struct BrandToolbarItem: ToolbarContent {
     @ToolbarContentBuilder
     private var content: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            HomeCandleButton(action: goHome)
+            HomeWindowButton(action: goHome)
         }
     }
 }
@@ -46,7 +46,7 @@ struct PermalinkBrandToolbarItem: ToolbarContent {
             BackPill(isEnabled: true, action: goHome)
         }
         ToolbarItem(placement: .principal) {
-            HomeCandleButton(action: goHome)
+            HomeWindowButton(action: goHome)
         }
     }
 }
@@ -83,7 +83,7 @@ private struct BackPill: View {
     }
 }
 
-private struct HomeCandleButton: View {
+private struct HomeWindowButton: View {
     let action: () -> Void
 
     @Environment(\.readerTheme) private var theme
@@ -91,7 +91,7 @@ private struct HomeCandleButton: View {
 
     var body: some View {
         Button(action: action) {
-            CandleMark(
+            WindowMark(
                 height: 40,
                 opacity: isHovering ? 0.46 : 0.78,
                 tint: theme.headerInk
