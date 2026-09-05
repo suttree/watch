@@ -31,6 +31,56 @@ final class WatchAppModel: ObservableObject {
     @Published var hasSkippedRefreshScreen = false
     @Published var lastRefreshError: String?
     @Published var isShowingSettings = false
+    @Published var recentlyRemovedBookmark: Story?
+    @Published var localLibraryError: String?
+    @Published private(set) var removedBookmarkCount = 0
+    private var library = BookmarkLibrary()
+    private var libraryLoadFailed = false
+    private var libraryStore: BookmarkLibraryStore {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return BookmarkLibraryStore(fileURL: support.appendingPathComponent("Watch/bookmarkLibrary.json"))
+    }
+
+    func removeBookmark(_ story: Story) {
+        var updated = library
+        updated.remove(story)
+        if saveLibrary(updated) { recentlyRemovedBookmark = story }
+    }
+
+    func undoBookmarkRemoval() {
+        guard let story = recentlyRemovedBookmark else { return }
+        var updated = library
+        updated.restore(story)
+        if saveLibrary(updated) { recentlyRemovedBookmark = nil }
+    }
+
+    func restoreRemovedBookmarks() {
+        var updated = library
+        updated.restoreAll()
+        if saveLibrary(updated) { recentlyRemovedBookmark = nil }
+    }
+
+    @discardableResult
+    private func saveLibrary(_ updated: BookmarkLibrary) -> Bool {
+        guard !libraryLoadFailed else { return false }
+        do {
+            try libraryStore.save(updated)
+            library = updated
+            applyLibrary()
+            localLibraryError = nil
+            return true
+        } catch {
+            localLibraryError = "Couldn't save Watch's local bookmarks. \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    private func applyLibrary() {
+        stories = library.visibleBookmarks
+        removedBookmarkCount = library.removedKeys.count
+        let videos = stories.filter { URL(string: $0.storyURL).flatMap(YouTubeVideo.init) != nil }.count
+        bookmarkStatus = "\(videos) YouTube · \(stories.count - videos) other · \(removedBookmarkCount) removed locally"
+    }
     @Published var path: [WatchRoute] = []
 
     typealias FeedMode = BookmarkFeedMode
@@ -112,6 +162,13 @@ final class WatchAppModel: ObservableObject {
             self.feedMode = .youtube
         }
         pruneSeenURLs(persist: true)
+        do {
+            library = try libraryStore.load()
+            applyLibrary()
+        } catch {
+            libraryLoadFailed = true
+            localLibraryError = "Couldn't read Watch's saved bookmarks. \(error.localizedDescription)"
+        }
     }
 
     private static func sourcesFileURL() -> URL {
@@ -419,10 +476,10 @@ final class WatchAppModel: ObservableObject {
         defer { isRefreshing = false; refreshStatus = nil; refreshProgress = 1 }
         do {
             let loaded = try await Task.detached { try FirefoxBookmarks.load() }.value
-            stories = loaded
+            var updated = library
+            updated.sync(loaded)
+            guard saveLibrary(updated) else { return }
             sources = [bookmarkSource]
-            let count = loaded.filter { $0.video != nil }.count
-            bookmarkStatus = "\(count) videos · \(loaded.count - count) other bookmarks"
             ratingByStoryID = voteHistory.reduce(into: [:]) { states, record in
                 if let id = record.storyID { states[id] = record.isUpvote }
             }

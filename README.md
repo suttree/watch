@@ -6,6 +6,14 @@ Watch syncs the folder when it opens and whenever you refresh. It reads a
 temporary copy of Firefox's bookmark database and recent changes, so Firefox
 can stay open. It never edits Firefox bookmarks.
 
+Watch keeps its own snapshot at
+`~/Library/Application Support/Watch/bookmarkLibrary.json`, so saved items
+remain available if Firefox cannot be read. Sync updates that snapshot.
+The trash icon removes an item from Watch only. Removals survive syncs and
+restarts, even if a YouTube bookmark's title or timestamp changes. Use **Undo**
+after removing an item, or **Restore removed items** in Settings. No extension
+is required, and the original Firefox bookmarks stay intact.
+
 The **YouTube** tab contains direct YouTube video bookmarks with thumbnails.
 Click a title or thumbnail to play in that row. Saved timestamps are preserved.
 Only one player is open at a time. Changing tabs or pages stops playback.

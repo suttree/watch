@@ -44,6 +44,20 @@ struct HomepageView: View {
                     if let error = model.lastRefreshError {
                         Text(error).foregroundStyle(.red).font(ReaderTheme.sans(13))
                     }
+                    if let error = model.localLibraryError {
+                        Text(error).foregroundStyle(.red).font(ReaderTheme.sans(13))
+                    }
+                    if let removed = model.recentlyRemovedBookmark {
+                        HStack {
+                            Text("Removed from Watch: \(removed.title)")
+                                .lineLimit(1)
+                            Spacer()
+                            Button("Undo") { model.undoBookmarkRemoval() }
+                        }
+                        .font(ReaderTheme.sans(12))
+                        .padding(10)
+                        .background(theme.paperInset, in: RoundedRectangle(cornerRadius: 6))
+                    }
                     if let status = model.refreshStatus {
                         HStack { ProgressView().controlSize(.small); Text(status) }
                             .font(ReaderTheme.sans(13))
@@ -62,7 +76,13 @@ struct HomepageView: View {
                                     story: story,
                                     isSelected: story.id == selectedStoryID,
                                     isActive: story.id == activeVideoID,
-                                    activate: { activate(story) }
+                                    activate: { activate(story) },
+                                    remove: {
+                                        model.removeBookmark(story)
+                                        if !model.stories.contains(where: { $0.id == story.id }), activeVideoID == story.id {
+                                            stopPlayback()
+                                        }
+                                    }
                                 )
                                 .id(story.id)
                             }
@@ -109,6 +129,9 @@ struct HomepageView: View {
             }
             .onChange(of: model.feedMode) { reset(proxy) }
             .onChange(of: model.homeRequestID) { reset(proxy) }
+            .onChange(of: filteredStories.count) {
+                if currentPage >= pageCount { changePage(pageCount - 1, proxy) }
+            }
         }
         .foregroundStyle(theme.ink)
         .background(theme.texturedPaper)
@@ -132,7 +155,7 @@ struct HomepageView: View {
         .sheet(isPresented: $model.isShowingSettings) { SettingsView(model: model) }
         .onAppear { listFocused = true }
         .onDisappear { stopPlayback() }
-        .task { if model.stories.isEmpty { await model.refresh() } }
+        .task { await model.refresh() }
     }
 
     private func activate(_ story: Story) {
@@ -184,6 +207,7 @@ private struct FeedBookmarkRow: View {
     let isSelected: Bool
     let isActive: Bool
     let activate: () -> Void
+    let remove: () -> Void
     @Environment(\.readerTheme) private var theme
     @State private var playbackError: String?
 
@@ -213,6 +237,15 @@ private struct FeedBookmarkRow: View {
                     .accessibilityLabel("Open original: \(story.title)")
                     .help("Open original")
                 }
+                Button(action: remove) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 15))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove from Watch: \(story.title)")
+                .help("Remove from Watch only. Firefox bookmark stays.")
             }
 
             if let video {
