@@ -4,6 +4,7 @@ import WatchCore
 
 struct BookmarkVideoPlayer: NSViewRepresentable {
     let video: YouTubeVideo
+    var autoplay = false
     var playbackChanged: (Bool) -> Void
     var failed: (String) -> Void
 
@@ -12,13 +13,13 @@ struct BookmarkVideoPlayer: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
-        configuration.mediaTypesRequiringUserActionForPlayback = .all
+        configuration.mediaTypesRequiringUserActionForPlayback = autoplay ? [] : .all
         configuration.userContentController.add(context.coordinator, name: "watchPlayer")
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.loadHTMLString("""
         <!doctype html><html><head><meta name="referrer" content="strict-origin-when-cross-origin">
         <style>html,body{margin:0;height:100%;background:black}iframe{width:100%;height:100%;border:0}</style></head>
-        <body><iframe id="player" src="\(video.embedURL.absoluteString)&enablejsapi=1&origin=https%3A%2F%2Fapp.watch.prototype" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+        <body><iframe id="player" src="\(video.embedURL.absoluteString)&autoplay=\(autoplay ? 1 : 0)&enablejsapi=1&origin=https%3A%2F%2Fapp.watch.prototype" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
         <script>
         function send(value) { window.webkit.messageHandlers.watchPlayer.postMessage(value); }
         function onYouTubeIframeAPIReady() {
@@ -53,7 +54,7 @@ struct BookmarkVideoPlayer: NSViewRepresentable {
             if let playing = payload["playing"] as? Bool { playbackChanged(playing) }
             if let error = payload["error"] as? Int {
                 playbackChanged(false)
-                failed("YouTube couldn't play this video here (error \(error)). Use Open original below.")
+                failed("YouTube couldn't play this video here, error \(error). Use the open-original icon next to the title.")
             }
         }
     }

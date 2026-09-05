@@ -25,17 +25,6 @@ struct WatchApp: App {
                 .disabled(!model.isUnlocked || model.isLockedByInactivity)
             }
 
-            CommandGroup(after: .sidebar) {
-                Button("Back") {
-                    model.goBack()
-                }
-                .keyboardShortcut("[", modifiers: .command)
-
-                Button("Forward") {
-                    model.goForward()
-                }
-                .keyboardShortcut("]", modifiers: .command)
-            }
         }
     }
 }
@@ -71,24 +60,8 @@ struct ContentView: View {
     }
 
     private var navigation: some View {
-        NavigationStack(path: $model.path) {
+        NavigationStack {
             HomepageView(model: model)
-                .navigationDestination(for: WatchRoute.self) { route in
-                    switch route {
-                    case .story(let id):
-                        if let story = model.story(withID: id) {
-                            // j/k on a permalink swaps the story in place at
-                            // the top of the path rather than pushing a new
-                            // route, so without an explicit identity SwiftUI
-                            // reuses the same PermalinkView — keeping the
-                            // previous story's already-loaded article in
-                            // @State while only the title (read straight from
-                            // the new story) updated.
-                            PermalinkView(model: model, story: story)
-                                .id(story.id)
-                        }
-                    }
-                }
         }
     }
 }

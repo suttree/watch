@@ -6,22 +6,24 @@ Watch syncs the folder when it opens and whenever you refresh. It reads a
 temporary copy of Firefox's bookmark database and recent changes, so Firefox
 can stay open. It never edits Firefox bookmarks.
 
-The **Videos** tab contains direct YouTube video bookmarks with thumbnails.
-Click a title or thumbnail to open YouTube's embedded player inside Watch.
-Saved timestamps are preserved. Use **Mark watched** when you finish.
-The **All** tab includes the other bookmarks, which open on their original
-websites. The existing rating controls learn your preferences for Videos.
+The **YouTube** tab contains direct YouTube video bookmarks with thumbnails.
+Click a title or thumbnail to play in that row. Saved timestamps are preserved.
+Only one player is open at a time. Changing tabs or pages stops playback.
+The **Other** tab contains the remaining bookmarks. An open-original icon
+beside each title opens the bookmark in your browser. There are no rating
+controls, video badges, or separate video pages.
 
 The folder can live in Firefox's Bookmarks Toolbar or Menu. Subfolders are
 included. If several folders are called `tv`, Watch selects the one closest
 to the toolbar or menu. It checks Firefox's default installed profile first.
-Videos sort by bookmark date, newest first, before ratings and watched state
-are applied. Duplicate YouTube links collapse to the most recently saved one.
+Both tabs sort by bookmark date, newest first. Duplicate YouTube links collapse
+to the most recently saved one. Old ratings and watched state do not affect
+which bookmarks appear or their order.
 
 Channel pages and search results remain ordinary bookmarks. Watch does not
 fetch a channel's uploads or extract streams from other sites. YouTube can
 restrict embedding, require sign-in, or remove a video. **Open original** is
-available below the player for those cases. Playback uses Watch's own web
+available beside each title for those cases. Playback uses Watch's own web
 session, separate from Firefox.
 
 Watch keeps ratings, watched state, and its password in

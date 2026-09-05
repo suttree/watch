@@ -20,9 +20,6 @@ struct BrandToolbarItem: ToolbarContent {
 
     @ToolbarContentBuilder
     private var content: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            BackPill(isEnabled: false) {}
-        }
         ToolbarItem(placement: .principal) {
             HomeCandleButton(action: goHome)
         }

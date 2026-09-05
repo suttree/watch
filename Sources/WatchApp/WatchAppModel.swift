@@ -33,14 +33,7 @@ final class WatchAppModel: ObservableObject {
     @Published var isShowingSettings = false
     @Published var path: [WatchRoute] = []
 
-    /// Two ways of looking at the same pile of stories: `feed` is the
-    /// recommendation stream, ranked by the Naive Bayes model, while `all`
-    /// is the plain list of everything pulled, newest first, nothing hidden
-    /// or reordered.
-    enum FeedMode: String {
-        case feed
-        case all
-    }
+    typealias FeedMode = BookmarkFeedMode
 
     @Published var feedMode: FeedMode {
         didSet {
@@ -134,7 +127,7 @@ final class WatchAppModel: ObservableObject {
         if let stored = UserDefaults.standard.string(forKey: Self.feedModeStorageKey), let mode = FeedMode(rawValue: stored) {
             self.feedMode = mode
         } else {
-            self.feedMode = .feed
+            self.feedMode = .youtube
         }
         pruneSeenURLs(persist: true)
     }
@@ -261,47 +254,9 @@ final class WatchAppModel: ObservableObject {
 
     // MARK: - Feed ordering
 
-    /// What each mode shows. Feed is the ranked recommendation stream, with
-    /// unread stories first and read stories kept below them, dimmed so the
-    /// reading history stays visible. All is everything pulled, in fetch
-    /// order, with the same read state treatment.
-    ///
-    /// Until the ranker has enough ratings to score anything, every bolt is
-    /// lit and Feed matches All minus whatever's been read.
+    /// Both tabs use bookmark date. Ratings and watched state do not filter or reorder them.
     func visibleStories(from allStories: [Story]) -> [Story] {
-        let candidates = ratedCandidates(from: feedMode == .feed ? allStories.filter { $0.video != nil } : allStories)
-        guard feedMode == .feed else {
-            // A story with a real, page-stated publish date sorts by that.
-            // A story without one sorts after every dated story, rather than
-            // falling back to `fetchedAt` compared directly against real
-            // dates — `fetchedAt` is always "just now, this refresh," so
-            // comparing it against a genuine publish time from hours or days
-            // ago meant any source that simply doesn't expose a date (a
-            // personal blog, a Pinboard bookmark, an aggregator) always won
-            // the sort regardless of how stale it actually was, crowding out
-            // properly-dated, genuinely fresh articles from sites that do
-            // expose one. Undated stories still keep a stable relative order
-            // among themselves, by `fetchedAt`, rather than shuffling on
-            // every recomputation.
-            let chronological = candidates.sorted { lhs, rhs in
-                switch (lhs.publishedAt, rhs.publishedAt) {
-                case let (lhsDate?, rhsDate?):
-                    return lhsDate > rhsDate
-                case (nil, nil):
-                    return lhs.fetchedAt > rhs.fetchedAt
-                case (nil, _):
-                    return false
-                case (_, nil):
-                    return true
-                }
-            }
-            let unread = chronological.filter { !readStoryIDs.contains($0.id) }
-            let read = chronological.filter { readStoryIDs.contains($0.id) }
-            return unread + read
-        }
-        let unread = candidates.filter { !readStoryIDs.contains($0.id) }
-        let read = candidates.filter { readStoryIDs.contains($0.id) }
-        return unread + read
+        feedMode.stories(from: allStories)
     }
 
     /// Feed's ordering before read state is applied — used by `visibleStories`
@@ -309,7 +264,7 @@ final class WatchAppModel: ObservableObject {
     /// be able to step off a story that opening it just marked read, which the
     /// read filter would otherwise pull out from under the step.
     private func ratedCandidates(from allStories: [Story]) -> [Story] {
-        guard feedMode == .feed, !scoreByStoryID.isEmpty else {
+        guard feedMode == .youtube, !scoreByStoryID.isEmpty else {
             return allStories
         }
         return allStories.enumerated()
@@ -333,7 +288,7 @@ final class WatchAppModel: ObservableObject {
     /// through — lets the homepage explain an empty Feed instead of showing
     /// the same "nothing fetched" message a failed refresh would.
     var isFeedRanked: Bool {
-        feedMode == .feed && !scoreByStoryID.isEmpty
+        feedMode == .youtube && !scoreByStoryID.isEmpty
     }
 
     // MARK: - Voting

@@ -3,6 +3,21 @@ import SQLite3
 @testable import WatchCore
 
 final class FirefoxBookmarksTests: XCTestCase {
+    func testFeedTabsAreDisjointAndSortByBookmarkDate() {
+        let source = UUID()
+        let older = Story(title: "Video", storyURL: "https://youtu.be/jNas99oEXBU", sourceID: source, sourceName: "tv", fetchedAt: Date(timeIntervalSince1970: 1))
+        let newer = Story(title: "Short", storyURL: "https://youtube.com/shorts/sY27Ds6Wc-A", sourceID: source, sourceName: "tv", fetchedAt: Date(timeIntervalSince1970: 3))
+        let channel = Story(title: "Channel", storyURL: "https://youtube.com/@channel", sourceID: source, sourceName: "tv", fetchedAt: Date(timeIntervalSince1970: 2))
+        let article = Story(title: "Article", storyURL: "https://example.com/article", sourceID: source, sourceName: "tv", fetchedAt: Date(timeIntervalSince1970: 4))
+        let all = [older, article, newer, channel]
+        let youtube = BookmarkFeedMode.youtube.stories(from: all)
+        let other = BookmarkFeedMode.other.stories(from: all)
+        XCTAssertEqual(youtube.map(\.id), [newer.id, older.id])
+        XCTAssertEqual(other.map(\.id), [article.id, channel.id])
+        XCTAssertTrue(Set(youtube.map(\.id)).isDisjoint(with: Set(other.map(\.id))))
+        XCTAssertEqual(youtube.count + other.count, all.count)
+    }
+
     func testVideoLinksAndTimestamps() throws {
         for path in ["https://youtu.be/jNas99oEXBU?t=1m2s", "https://www.youtube.com/watch?v=jNas99oEXBU&t=62", "https://www.youtube.com/shorts/jNas99oEXBU?start=62"] {
             let video = try XCTUnwrap(YouTubeVideo(url: URL(string: path)!))
