@@ -264,6 +264,7 @@ private struct FeedBookmarkRow: View {
                                 AsyncImage(url: URL(string: video.thumbnailURL)) { image in
                                     image.resizable().scaledToFill()
                                 } placeholder: { Color.black }
+                                .allowsHitTesting(false)
                             }
                             .clipped()
                             .overlay {
@@ -271,8 +272,12 @@ private struct FeedBookmarkRow: View {
                                     .font(.system(size: 58))
                                     .foregroundStyle(.white)
                                     .shadow(radius: 6)
+                                    .allowsHitTesting(false)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 6))
+                            // Cropping the image does not constrain its hit region.
+                            // Keep this button clear of the title and row actions.
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Play \(story.title)")
