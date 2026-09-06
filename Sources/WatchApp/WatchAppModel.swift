@@ -49,6 +49,12 @@ final class WatchAppModel: ObservableObject {
 
     func undoBookmarkRemoval() {
         guard let story = recentlyRemovedBookmark else { return }
+        restoreBookmark(story)
+    }
+
+    func isBookmarkRemoved(_ story: Story) -> Bool { library.isRemoved(story) }
+
+    func restoreBookmark(_ story: Story) {
         var updated = library
         updated.restore(story)
         if saveLibrary(updated) { recentlyRemovedBookmark = nil }
@@ -76,7 +82,7 @@ final class WatchAppModel: ObservableObject {
     }
 
     private func applyLibrary() {
-        stories = library.visibleBookmarks
+        stories = library.bookmarks
         removedBookmarkCount = library.removedKeys.count
         let videos = stories.filter { URL(string: $0.storyURL).flatMap(YouTubeVideo.init) != nil }.count
         bookmarkStatus = "\(videos) YouTube · \(stories.count - videos) other · \(removedBookmarkCount) removed locally"

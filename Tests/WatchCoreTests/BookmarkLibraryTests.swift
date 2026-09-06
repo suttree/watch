@@ -41,6 +41,23 @@ final class BookmarkLibraryTests: XCTestCase {
         XCTAssertTrue(library.removedKeys.isEmpty)
     }
 
+    func testRemovedRowsKeepTheirPositionAndRestoreIndependently() throws {
+        let first = story("https://youtu.be/jNas99oEXBU")
+        let second = story("https://example.com/second")
+        var library = BookmarkLibrary()
+        library.sync([first, second])
+        library.remove(first)
+        library.remove(second)
+        library = try JSONDecoder().decode(BookmarkLibrary.self, from: JSONEncoder().encode(library))
+        XCTAssertEqual(library.bookmarks.map(\.id), [first.id, second.id])
+        XCTAssertTrue(library.isRemoved(first))
+        XCTAssertTrue(library.isRemoved(second))
+        library.restore(first)
+        XCTAssertFalse(library.isRemoved(first))
+        XCTAssertTrue(library.isRemoved(second))
+        XCTAssertEqual(library.bookmarks.map(\.id), [first.id, second.id])
+    }
+
     func testMissingStoreStartsEmptyAndCorruptStoreThrows() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

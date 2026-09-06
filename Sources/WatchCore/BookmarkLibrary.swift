@@ -12,6 +12,10 @@ public struct BookmarkLibrary: Codable, Sendable {
         bookmarks.filter { !removedKeys.contains(Self.key(for: $0)) }
     }
 
+    public func isRemoved(_ story: Story) -> Bool {
+        removedKeys.contains(Self.key(for: story))
+    }
+
     public mutating func sync(_ bookmarks: [Story], now: Date = Date()) {
         self.bookmarks = bookmarks
         lastSyncedAt = now

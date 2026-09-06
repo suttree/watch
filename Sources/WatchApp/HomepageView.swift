@@ -47,17 +47,6 @@ struct HomepageView: View {
                     if let error = model.localLibraryError {
                         Text(error).foregroundStyle(.red).font(ReaderTheme.sans(13))
                     }
-                    if let removed = model.recentlyRemovedBookmark {
-                        HStack {
-                            Text("Removed from Watch: \(removed.title)")
-                                .lineLimit(1)
-                            Spacer()
-                            Button("Undo") { model.undoBookmarkRemoval() }
-                        }
-                        .font(ReaderTheme.sans(12))
-                        .padding(10)
-                        .background(theme.paperInset, in: RoundedRectangle(cornerRadius: 6))
-                    }
                     if let status = model.refreshStatus {
                         HStack { ProgressView().controlSize(.small); Text(status) }
                             .font(ReaderTheme.sans(13))
@@ -72,6 +61,20 @@ struct HomepageView: View {
                         if pageCount > 1 { pagination(proxy) }
                         VStack(spacing: 24) {
                             ForEach(page) { story in
+                                if model.isBookmarkRemoved(story) {
+                                    HStack(spacing: 12) {
+                                        Text("Removed from Watch: \(story.title)")
+                                            .font(ReaderTheme.serif(15))
+                                            .lineLimit(1)
+                                            .help(story.title)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        Button("Undo") { model.restoreBookmark(story) }
+                                            .accessibilityLabel("Restore \(story.title)")
+                                    }
+                                    .padding(12)
+                                    .background(theme.paperInset, in: RoundedRectangle(cornerRadius: 6))
+                                    .id(story.id)
+                                } else {
                                 FeedBookmarkRow(
                                     story: story,
                                     isSelected: story.id == selectedStoryID,
@@ -79,12 +82,13 @@ struct HomepageView: View {
                                     activate: { activate(story) },
                                     remove: {
                                         model.removeBookmark(story)
-                                        if !model.stories.contains(where: { $0.id == story.id }), activeVideoID == story.id {
+                                        if model.isBookmarkRemoved(story), activeVideoID == story.id {
                                             stopPlayback()
                                         }
                                     }
                                 )
                                 .id(story.id)
+                                }
                             }
                         }
                         if pageCount > 1 { pagination(proxy) }
@@ -159,6 +163,7 @@ struct HomepageView: View {
     }
 
     private func activate(_ story: Story) {
+        guard !model.isBookmarkRemoved(story) else { return }
         selectedStoryID = story.id
         guard let url = URL(string: story.storyURL) else { return }
         if YouTubeVideo(url: url) != nil {

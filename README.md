@@ -15,7 +15,9 @@ Firefox bookmarks.
   fullscreen button to expand the video and Esc to return. The CC button
   toggles captions when available.
 - The trash icon removes an item locally. Removals survive refreshes and
-  restarts. Use **Undo** or **Restore removed items** in Settings to bring them back.
+  restarts. Removed items stay in place as compact title rows without a player
+  or thumbnail. Each has an **Undo** button. Use **Restore removed items** in
+  Settings to restore them all. Firefox bookmarks stay intact.
 
 Watch keeps its local library at
 `~/Library/Application Support/Watch/bookmarkLibrary.json`, available even
