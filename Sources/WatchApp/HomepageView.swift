@@ -10,7 +10,7 @@ struct HomepageView: View {
     @State private var activeVideoID: String?
     @State private var pullArmed = true
     @FocusState private var listFocused: Bool
-    private let pageSize = 5
+    private let pageSize = 15
 
     private var filteredStories: [Story] { model.visibleStories(from: model.stories) }
     private var pageCount: Int { max(1, (filteredStories.count + pageSize - 1) / pageSize) }

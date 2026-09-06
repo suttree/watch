@@ -7,6 +7,11 @@ and its subfolders on launch and refresh, with the newest bookmarks first.
 Firefox can stay open. No extension is required, and Watch never edits your
 Firefox bookmarks.
 
+Each page shows up to 15 items. Watch saves playback position locally every
+second and on pause, then resumes the same video when reopened. Until a video
+has saved progress, its bookmark timestamp is used. Finished videos restart
+from the beginning. Progress is not synced to Firefox or YouTube.
+
 - **YouTube:** click a title or thumbnail to play inline, including saved
   timestamps. Only one video plays at a time. Switching tabs or pages stops it.
 - **Other:** all remaining bookmarks, including channel pages and search results.
