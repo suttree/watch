@@ -40,7 +40,7 @@ struct SettingsView: View {
                     Text("Firefox bookmarks").font(.headline)
                     Text("Watch reads the tv folder in Firefox's Bookmarks Toolbar or Menu, including its subfolders. If several folders share that name, the one closest to the toolbar or menu wins. Add or remove bookmarks in Firefox, then refresh Watch.")
                     Text(model.bookmarkStatus).foregroundStyle(.secondary)
-                    Text("YouTube shows videos you can play in the feed. Other contains the remaining bookmarks. Each tab sorts by the date you saved each link, newest first.")
+                    Text("Videos shows YouTube videos and Instagram reels and posts you can open in the feed. Other contains the remaining bookmarks. Each tab sorts by the date you saved each link, newest first.")
                     Text("Remove hides an item in Watch only. Firefox bookmarks stay intact, and syncing won't bring removed items back.")
                     Button("Restore removed items (\(model.removedBookmarkCount))") {
                         model.restoreRemovedBookmarks()

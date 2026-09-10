@@ -91,8 +91,8 @@ public enum FirefoxBookmarks {
             if let raw = sqlite3_column_text(statement, 1) {
                 let address = String(cString: raw)
                 if let url = URL(string: address), ["https", "http"].contains(url.scheme ?? "") {
-                    let video = YouTubeVideo(url: url)
-                    let key = video.map { "youtube:\($0.id)" } ?? address
+                    let video = BookmarkVideo(url: url)
+                    let key = video.map { $0.key } ?? address
                     if seen.insert(key).inserted {
                         let title = sqlite3_column_text(statement, 0).map { String(cString: $0) } ?? url.host ?? address
                         let date = Date(timeIntervalSince1970: Double(sqlite3_column_int64(statement, 2)) / 1_000_000)

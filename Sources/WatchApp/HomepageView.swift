@@ -53,7 +53,7 @@ struct HomepageView: View {
                     }
                     if filteredStories.isEmpty, !model.isRefreshing {
                         Text(model.feedMode == .youtube
-                             ? "No YouTube videos in your Firefox tv folder."
+                             ? "No YouTube videos or Instagram posts in your Firefox tv folder."
                              : "No other bookmarks in your Firefox tv folder.")
                             .foregroundStyle(theme.inkSecondary)
                             .padding(.vertical, 40)
@@ -166,7 +166,7 @@ struct HomepageView: View {
         guard !model.isBookmarkRemoved(story) else { return }
         selectedStoryID = story.id
         guard let url = URL(string: story.storyURL) else { return }
-        if YouTubeVideo(url: url) != nil {
+        if BookmarkVideo(url: url) != nil {
             if activeVideoID != story.id {
                 stopPlayback()
                 activeVideoID = story.id
@@ -218,7 +218,7 @@ private struct FeedBookmarkRow: View {
     @State private var playbackError: String?
 
     private var url: URL? { URL(string: story.storyURL) }
-    private var video: YouTubeVideo? { url.flatMap(YouTubeVideo.init) }
+    private var video: BookmarkVideo? { url.flatMap(BookmarkVideo.init) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -256,17 +256,27 @@ private struct FeedBookmarkRow: View {
 
             if let video {
                 if isActive {
-                    BookmarkVideoPlayer(video: video, autoplay: true,
-                                        failed: { playbackError = $0 })
-                        .aspectRatio(16 / 9, contentMode: .fit)
-                        .frame(minHeight: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    switch video {
+                    case .youtube(let youtube):
+                        BookmarkVideoPlayer(video: youtube, autoplay: true,
+                                            failed: { playbackError = $0 })
+                            .aspectRatio(16 / 9, contentMode: .fit)
+                            .frame(minHeight: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    case .instagram(let instagram):
+                        InstagramVideoPlayer(video: instagram, failed: { playbackError = $0 })
+                            .frame(maxWidth: 540)
+                            .frame(height: 680)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        Text("If Instagram can't display this post, use the open-original icon next to the title.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 } else {
                     Button(action: activate) {
                         Color.black
                             .aspectRatio(16 / 9, contentMode: .fit)
                             .overlay {
-                                AsyncImage(url: URL(string: video.thumbnailURL)) { image in
+                                AsyncImage(url: video.thumbnailURL.flatMap(URL.init(string:))) { image in
                                     image.resizable().scaledToFill()
                                 } placeholder: { Color.black }
                                 .allowsHitTesting(false)

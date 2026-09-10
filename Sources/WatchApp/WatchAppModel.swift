@@ -84,8 +84,8 @@ final class WatchAppModel: ObservableObject {
     private func applyLibrary() {
         stories = library.bookmarks
         removedBookmarkCount = library.removedKeys.count
-        let videos = stories.filter { URL(string: $0.storyURL).flatMap(YouTubeVideo.init) != nil }.count
-        bookmarkStatus = "\(videos) YouTube · \(stories.count - videos) other · \(removedBookmarkCount) removed locally"
+        let videos = stories.filter { URL(string: $0.storyURL).flatMap(BookmarkVideo.init) != nil }.count
+        bookmarkStatus = "\(videos) videos · \(stories.count - videos) other · \(removedBookmarkCount) removed locally"
     }
     @Published var path: [WatchRoute] = []
 

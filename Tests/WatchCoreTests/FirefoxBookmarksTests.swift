@@ -40,15 +40,16 @@ final class FirefoxBookmarksTests: XCTestCase {
         CREATE TABLE moz_bookmarks(id INTEGER, parent INTEGER, type INTEGER, title TEXT, guid TEXT, fk INTEGER, dateAdded INTEGER);
         CREATE TABLE moz_places(id INTEGER, url TEXT);
         INSERT INTO moz_bookmarks VALUES(1,0,2,'Menu','menu________',NULL,0),(2,1,2,'TV','tvfolder',NULL,0),(3,2,2,'Films','nested',NULL,0),(4,0,2,'tv','outside',NULL,0);
-        INSERT INTO moz_places VALUES(1,'https://youtube.com/watch?v=jNas99oEXBU&t=1s'),(2,'https://youtu.be/jNas99oEXBU'),(3,'https://example.com/article'),(4,'https://example.com/private');
-        INSERT INTO moz_bookmarks VALUES(5,2,1,'Newest','video',1,3000000),(6,3,1,'Duplicate','dup',2,2000000),(7,3,1,'Article','article',3,1000000),(8,4,1,'Excluded','excluded',4,4000000);
+        INSERT INTO moz_places VALUES(1,'https://youtube.com/watch?v=jNas99oEXBU&t=1s'),(2,'https://youtu.be/jNas99oEXBU'),(3,'https://example.com/article'),(4,'https://example.com/private'),(5,'https://instagram.com/reel/ABC123/?igsh=one'),(6,'https://www.instagram.com/p/ABC123/');
+        INSERT INTO moz_bookmarks VALUES(5,2,1,'Newest','video',1,3000000),(6,3,1,'Duplicate','dup',2,2000000),(7,3,1,'Article','article',3,1000000),(8,4,1,'Excluded','excluded',4,4000000),(9,2,1,'Instagram','insta',5,2500000),(10,3,1,'Instagram duplicate','instadup',6,1500000);
         """
         XCTAssertEqual(sqlite3_exec(db, sql, nil, nil, nil), SQLITE_OK)
         sqlite3_close(db)
         let stories = try XCTUnwrap(FirefoxBookmarks.read(database: database))
-        XCTAssertEqual(stories.map(\.title), ["Newest", "Article"])
+        XCTAssertEqual(stories.map(\.title), ["Newest", "Instagram", "Article"])
         XCTAssertEqual(stories.first?.fetchedAt, Date(timeIntervalSince1970: 3))
         XCTAssertNotNil(stories.first?.video)
+        XCTAssertNotNil(stories[1].video)
         XCTAssertNil(stories.last?.video)
         XCTAssertEqual(try FirefoxBookmarks.read(database: database)?.map(\.id), stories.map(\.id))
     }

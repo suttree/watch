@@ -17,6 +17,11 @@ public struct BookmarkLibrary: Codable, Sendable {
     }
 
     public mutating func sync(_ bookmarks: [Story], now: Date = Date()) {
+        // Older versions stored Instagram removals as full URLs.
+        removedKeys = Set(removedKeys.map { key in
+            guard let url = URL(string: key), let video = InstagramVideo(url: url) else { return key }
+            return "instagram:\(video.id)"
+        })
         self.bookmarks = bookmarks
         lastSyncedAt = now
     }
@@ -26,8 +31,8 @@ public struct BookmarkLibrary: Codable, Sendable {
     public mutating func restoreAll() { removedKeys.removeAll() }
 
     private static func key(for story: Story) -> String {
-        if let url = URL(string: story.storyURL), let video = YouTubeVideo(url: url) {
-            return "youtube:\(video.id)"
+        if let url = URL(string: story.storyURL), let video = BookmarkVideo(url: url) {
+            return video.key
         }
         return story.storyURL
     }
