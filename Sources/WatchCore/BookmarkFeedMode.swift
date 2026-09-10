@@ -4,7 +4,7 @@ public enum BookmarkFeedMode: String, CaseIterable, Sendable {
     case youtube
     case other
 
-    public var title: String { self == .youtube ? "Videos" : "Other" }
+    public var title: String { self == .youtube ? "All" : "Other" }
 
     public func stories(from bookmarks: [Story]) -> [Story] {
         bookmarks.filter { story in
