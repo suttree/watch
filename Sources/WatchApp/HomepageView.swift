@@ -265,16 +265,19 @@ private struct FeedBookmarkRow: View {
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     case .instagram(let instagram):
                         InstagramVideoPlayer(video: instagram, failed: { playbackError = $0 })
-                            .frame(maxWidth: 540)
-                            .frame(height: 680)
+                            .frame(maxWidth: 360)
+                            .frame(height: 560)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .frame(maxWidth: .infinity, alignment: .center)
                         Text("If Instagram can't display this post, use the open-original icon next to the title.")
                             .font(.caption).foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
                     }
                 } else {
                     Button(action: activate) {
                         Color.black
-                            .aspectRatio(16 / 9, contentMode: .fit)
+                            .aspectRatio(video.thumbnailURL == nil ? 4 / 5 : 16 / 9, contentMode: .fit)
                             .overlay {
                                 AsyncImage(url: video.thumbnailURL.flatMap(URL.init(string:))) { image in
                                     image.resizable().scaledToFill()
@@ -293,8 +296,10 @@ private struct FeedBookmarkRow: View {
                             // Cropping the image does not constrain its hit region.
                             // Keep this button clear of the title and row actions.
                             .contentShape(Rectangle())
+                            .frame(maxWidth: video.thumbnailURL == nil ? 360 : .infinity)
                     }
                     .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .accessibilityLabel("Play \(story.title)")
                 }
                 if isActive, let playbackError {
