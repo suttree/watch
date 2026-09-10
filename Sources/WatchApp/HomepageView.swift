@@ -219,6 +219,10 @@ private struct FeedBookmarkRow: View {
 
     private var url: URL? { URL(string: story.storyURL) }
     private var video: BookmarkVideo? { url.flatMap(BookmarkVideo.init) }
+    private var isInstagram: Bool {
+        if case .instagram = video { return true }
+        return false
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -312,9 +316,11 @@ private struct FeedBookmarkRow: View {
 
             Rectangle().fill(theme.rule).frame(height: 1).padding(.top, 12)
         }
+        .frame(maxWidth: isInstagram ? 360 : .infinity)
         .padding(8)
         .background(isSelected ? theme.paperInset : Color.clear,
                     in: RoundedRectangle(cornerRadius: 6))
+        .frame(maxWidth: .infinity, alignment: .center)
         .onChange(of: isActive) { playbackError = nil }
     }
 }
