@@ -3,11 +3,13 @@ import Foundation
 public enum BookmarkFeedMode: String, CaseIterable, Sendable {
     case youtube
     case other
+    case favourites
 
-    public var title: String { self == .youtube ? "All" : "Other" }
+    public var title: String { self == .youtube ? "All" : self == .other ? "Other" : "Favourites" }
 
     public func stories(from bookmarks: [Story]) -> [Story] {
-        bookmarks.filter { story in
+        guard self != .favourites else { return [] }
+        return bookmarks.filter { story in
             let isVideo = URL(string: story.storyURL).flatMap(BookmarkVideo.init) != nil
             return self == .youtube ? isVideo : !isVideo
         }.sorted {

@@ -47,12 +47,16 @@ struct HomepageView: View {
                     if let error = model.localLibraryError {
                         Text(error).foregroundStyle(.red).font(ReaderTheme.sans(13))
                     }
+                    if let error = model.favouritesError {
+                        Text(error).foregroundStyle(.red).font(ReaderTheme.sans(13))
+                    }
                     if let status = model.refreshStatus {
                         HStack { ProgressView().controlSize(.small); Text(status) }
                             .font(ReaderTheme.sans(13))
                     }
                     if filteredStories.isEmpty, !model.isRefreshing {
-                        Text(model.feedMode == .youtube
+                        Text(model.feedMode == .favourites ? "No favourites yet. Use the lightning bolt beside a video to save it."
+                             : model.feedMode == .youtube
                              ? "No YouTube videos or Instagram posts in your Firefox tv folder."
                              : "No other bookmarks in your Firefox tv folder.")
                             .foregroundStyle(theme.inkSecondary)
@@ -61,7 +65,7 @@ struct HomepageView: View {
                         if pageCount > 1 { pagination(proxy) }
                         VStack(spacing: 24) {
                             ForEach(page) { story in
-                                if model.isBookmarkRemoved(story) {
+                                if model.feedMode != .favourites && model.isBookmarkRemoved(story) {
                                     HStack(spacing: 12) {
                                         Text("Removed from Watch: \(story.title)")
                                             .font(ReaderTheme.serif(15))
@@ -79,6 +83,9 @@ struct HomepageView: View {
                                     story: story,
                                     isSelected: story.id == selectedStoryID,
                                     isActive: story.id == activeVideoID,
+                                    isFavourite: model.isFavourite(story),
+                                    toggleFavourite: { model.toggleFavourite(story) },
+                                    isFavouritesFeed: model.feedMode == .favourites,
                                     activate: { activate(story) },
                                     remove: {
                                         model.removeBookmark(story)
@@ -163,7 +170,7 @@ struct HomepageView: View {
     }
 
     private func activate(_ story: Story) {
-        guard !model.isBookmarkRemoved(story) else { return }
+        guard model.feedMode == .favourites || !model.isBookmarkRemoved(story) else { return }
         selectedStoryID = story.id
         guard let url = URL(string: story.storyURL) else { return }
         if BookmarkVideo(url: url) != nil {
@@ -212,6 +219,9 @@ private struct FeedBookmarkRow: View {
     let story: Story
     let isSelected: Bool
     let isActive: Bool
+    let isFavourite: Bool
+    let toggleFavourite: () -> Void
+    let isFavouritesFeed: Bool
     let activate: () -> Void
     let remove: () -> Void
     @Environment(\.readerTheme) private var theme
@@ -236,6 +246,18 @@ private struct FeedBookmarkRow: View {
                 .buttonStyle(.plain)
                 .help(video == nil ? "Open original" : "Play here")
 
+                if video != nil {
+                    Button(action: toggleFavourite) {
+                        Image(systemName: isFavourite ? "bolt.fill" : "bolt")
+                            .font(.system(size: 15))
+                            .foregroundStyle(isFavourite ? Color.orange : theme.ink)
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(isFavourite ? "Remove from" : "Add to") favourites: \(story.title)")
+                    .help(isFavourite ? "Remove from favourites" : "Save to favourites")
+                }
                 if let url {
                     Link(destination: url) {
                         Image(systemName: "arrow.up.right.square")
@@ -247,6 +269,7 @@ private struct FeedBookmarkRow: View {
                     .accessibilityLabel("Open original: \(story.title)")
                     .help("Open original")
                 }
+                if !isFavouritesFeed {
                 Button(action: remove) {
                     Image(systemName: "trash")
                         .font(.system(size: 15))
@@ -256,6 +279,7 @@ private struct FeedBookmarkRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Remove from Watch: \(story.title)")
                 .help("Remove from Watch only. Firefox bookmark stays.")
+                }
             }
 
             if let video {

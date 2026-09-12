@@ -34,6 +34,29 @@ final class WatchAppModel: ObservableObject {
     @Published var recentlyRemovedBookmark: Story?
     @Published var localLibraryError: String?
     @Published private(set) var removedBookmarkCount = 0
+    @Published private(set) var favourites = FavouritesLibrary()
+    @Published var favouritesError: String?
+    private var favouritesLoadFailed = false
+    private var favouritesStore: FavouritesStore {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return FavouritesStore(fileURL: support.appendingPathComponent("Watch/favourites.json"))
+    }
+
+    func isFavourite(_ story: Story) -> Bool { favourites.contains(story) }
+
+    func toggleFavourite(_ story: Story) {
+        guard !favouritesLoadFailed else { return }
+        var updated = favourites
+        updated.toggle(story)
+        do {
+            try favouritesStore.save(updated)
+            favourites = updated
+            favouritesError = nil
+        } catch {
+            favouritesError = "Couldn't save favourites. \(error.localizedDescription)"
+        }
+    }
+
     private var library = BookmarkLibrary()
     private var libraryLoadFailed = false
     private var libraryStore: BookmarkLibraryStore {
@@ -168,6 +191,11 @@ final class WatchAppModel: ObservableObject {
             self.feedMode = .youtube
         }
         pruneSeenURLs(persist: true)
+        do { favourites = try favouritesStore.load() }
+        catch {
+            favouritesLoadFailed = true
+            favouritesError = "Couldn't read favourites. \(error.localizedDescription)"
+        }
         do {
             library = try libraryStore.load()
             applyLibrary()
@@ -301,7 +329,7 @@ final class WatchAppModel: ObservableObject {
 
     /// Both tabs use bookmark date. Ratings and watched state do not filter or reorder them.
     func visibleStories(from allStories: [Story]) -> [Story] {
-        feedMode.stories(from: allStories)
+        feedMode == .favourites ? favourites.stories : feedMode.stories(from: allStories)
     }
 
     /// Feed's ordering before read state is applied — used by `visibleStories`
