@@ -278,6 +278,19 @@ private struct FeedBookmarkRow: View {
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
                     }
+                } else if case .instagram(let instagram) = video {
+                    InstagramVideoPlayer(video: instagram, failed: { playbackError = $0 })
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                        .frame(maxWidth: 360)
+                        .frame(height: 560)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay {
+                            Button(action: activate) { Color.clear.contentShape(Rectangle()) }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Play \(story.title)")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
                 } else {
                     Button(action: activate) {
                         Color.black
@@ -306,7 +319,7 @@ private struct FeedBookmarkRow: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .accessibilityLabel("Play \(story.title)")
                 }
-                if isActive, let playbackError {
+                if let playbackError {
                     Text(playbackError).font(.caption).foregroundStyle(.secondary)
                 }
             } else {

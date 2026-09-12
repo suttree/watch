@@ -11,6 +11,7 @@ struct InstagramVideoPlayer: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
+        configuration.mediaTypesRequiringUserActionForPlayback = .all
         configuration.preferences.isElementFullscreenEnabled = true
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = context.coordinator
