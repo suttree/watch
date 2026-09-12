@@ -15,9 +15,10 @@ struct BookmarkVideoPlayer: NSViewRepresentable {
         configuration.preferences.isElementFullscreenEnabled = true
         configuration.mediaTypesRequiringUserActionForPlayback = autoplay ? [] : .all
         configuration.userContentController.add(context.coordinator, name: "watchPlayer")
-        let view = WKWebView(frame: .zero, configuration: configuration)
+        let view = BrowserLinkWebView(frame: .zero, configuration: configuration)
         // Identify this desktop WebKit host as Safari so YouTube supplies its
         // desktop controls, including captions and settings.
+        view.uiDelegate = context.coordinator
         view.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
         context.coordinator.attach(view)
         var embed = URLComponents(url: video.embedURL, resolvingAgainstBaseURL: false)!
@@ -65,11 +66,20 @@ struct BookmarkVideoPlayer: NSViewRepresentable {
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
         coordinator.detach()
         view.configuration.userContentController.removeScriptMessageHandler(forName: "watchPlayer")
+        view.uiDelegate = nil
         view.stopLoading()
         view.loadHTMLString("", baseURL: nil)
     }
 
-    final class Coordinator: NSObject, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate {
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url, ["https", "http"].contains(url.scheme ?? "") {
+                NSWorkspace.shared.open(url)
+            }
+            return nil
+        }
+
         weak var webView: WKWebView?
         private var keyMonitor: Any?
         let videoID: String

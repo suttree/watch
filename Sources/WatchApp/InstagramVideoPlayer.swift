@@ -13,8 +13,9 @@ struct InstagramVideoPlayer: NSViewRepresentable {
         configuration.websiteDataStore = .default()
         configuration.mediaTypesRequiringUserActionForPlayback = .all
         configuration.preferences.isElementFullscreenEnabled = true
-        let view = WKWebView(frame: .zero, configuration: configuration)
+        let view = BrowserLinkWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = context.coordinator
+        view.uiDelegate = context.coordinator
         view.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
         view.load(URLRequest(url: video.embedURL))
         return view
@@ -26,11 +27,20 @@ struct InstagramVideoPlayer: NSViewRepresentable {
 
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
         view.navigationDelegate = nil
+        view.uiDelegate = nil
         view.stopLoading()
         view.loadHTMLString("", baseURL: nil)
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url, ["https", "http"].contains(url.scheme ?? "") {
+                NSWorkspace.shared.open(url)
+            }
+            return nil
+        }
+
         var failed: (String) -> Void
         init(failed: @escaping (String) -> Void) { self.failed = failed }
 
