@@ -153,6 +153,9 @@ struct HomepageView: View {
         .toolbar {
             BrandToolbarItem { model.goHome() }
             ToolbarItem(placement: .primaryAction) {
+                Spacer()
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button { Task { await model.refresh() } } label: {
                     Label("Refresh bookmarks", systemImage: "arrow.clockwise")
                 }
