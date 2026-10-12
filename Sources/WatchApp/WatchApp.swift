@@ -13,6 +13,7 @@ struct WatchApp: App {
             ContentView(model: model)
                 .frame(minWidth: 760, minHeight: 560)
         }
+        .windowToolbarStyle(.unified)
         .commands {
             // Replacing rather than adding, so ⌘, lands on the app's own
             // settings sheet and macOS doesn't also offer an empty Settings

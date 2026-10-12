@@ -20,7 +20,7 @@ struct BrandToolbarItem: ToolbarContent {
 
     @ToolbarContentBuilder
     private var content: some ToolbarContent {
-        ToolbarItem(placement: .principal) {
+        ToolbarItem(placement: .navigation) {
             HomeWindowButton(action: goHome)
         }
     }

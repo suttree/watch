@@ -152,13 +152,13 @@ struct HomepageView: View {
         .toolbarBackground(theme.headerPaint, for: .windowToolbar)
         .toolbar {
             BrandToolbarItem { model.goHome() }
-            ToolbarItem {
+            ToolbarItem(placement: .primaryAction) {
                 Button { Task { await model.refresh() } } label: {
                     Label("Refresh bookmarks", systemImage: "arrow.clockwise")
                 }
                 .disabled(model.isRefreshing)
             }
-            ToolbarItem {
+            ToolbarItem(placement: .primaryAction) {
                 Button { model.isShowingSettings = true } label: {
                     Label("Settings", systemImage: "gearshape")
                 }
