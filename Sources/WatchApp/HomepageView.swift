@@ -56,6 +56,7 @@ struct HomepageView: View {
                     }
                     if filteredStories.isEmpty, !model.isRefreshing {
                         Text(model.feedMode == .favourites ? "No favourites yet. Use the lightning bolt beside a video to save it."
+                             : model.feedMode == .deleted ? "No deleted items."
                              : model.feedMode == .youtube
                              ? "No YouTube videos or Instagram posts in your Firefox tv folder."
                              : "No other bookmarks in your Firefox tv folder.")
@@ -65,7 +66,7 @@ struct HomepageView: View {
                         if pageCount > 1 { pagination(proxy) }
                         VStack(spacing: 24) {
                             ForEach(page) { story in
-                                if model.feedMode != .favourites && model.isBookmarkRemoved(story) {
+                                if model.feedMode == .deleted {
                                     HStack(spacing: 12) {
                                         Text("Removed from Watch: \(story.title)")
                                             .font(ReaderTheme.serif(15))

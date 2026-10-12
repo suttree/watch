@@ -4,12 +4,22 @@ public enum BookmarkFeedMode: String, CaseIterable, Sendable {
     case youtube
     case other
     case favourites
+    case deleted
 
-    public var title: String { self == .youtube ? "All" : self == .other ? "Other" : "Favourites" }
+    public var title: String {
+        switch self {
+        case .youtube: "All"
+        case .other: "Other"
+        case .favourites: "Favourites"
+        case .deleted: "Deleted"
+        }
+    }
 
-    public func stories(from bookmarks: [Story]) -> [Story] {
+    public func stories(from bookmarks: [Story], isRemoved: (Story) -> Bool = { _ in false }) -> [Story] {
         guard self != .favourites else { return [] }
         return bookmarks.filter { story in
+            if self == .deleted { return isRemoved(story) }
+            guard !isRemoved(story) else { return false }
             let isVideo = URL(string: story.storyURL).flatMap(BookmarkVideo.init) != nil
             return self == .youtube ? isVideo : !isVideo
         }.sorted {

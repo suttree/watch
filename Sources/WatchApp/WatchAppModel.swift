@@ -327,9 +327,9 @@ final class WatchAppModel: ObservableObject {
 
     // MARK: - Feed ordering
 
-    /// Both tabs use bookmark date. Ratings and watched state do not filter or reorder them.
+    /// Bookmark tabs use bookmark date; favourites keep their saved order.
     func visibleStories(from allStories: [Story]) -> [Story] {
-        feedMode == .favourites ? favourites.stories : feedMode.stories(from: allStories)
+        feedMode == .favourites ? favourites.stories : feedMode.stories(from: allStories, isRemoved: library.isRemoved)
     }
 
     /// Feed's ordering before read state is applied — used by `visibleStories`
