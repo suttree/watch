@@ -420,11 +420,8 @@ private struct PolkaDotTexture: View {
     }
 }
 
-/// Generates and applies a themed app icon: a solid midpoint colour with the
-/// winning candle artwork embossed over the top.
-/// Persisted across relaunches since an icon override is otherwise just an
-/// in-memory NSApplication property macOS has no reason to remember on its
-/// own.
+/// Applies the transparent window artwork, using white lines in dark mode
+/// and black lines in light mode. Reapplied on launch and appearance changes.
 enum AppIconTheming {
     @MainActor private static var appearanceObserver: NSKeyValueObservation?
 

@@ -17,7 +17,7 @@ let package = Package(
             name: "WatchApp",
             dependencies: ["WatchCore"],
             resources: [
-                .copy("Resources")
+                .process("Resources")
             ]
         ),
         .testTarget(
