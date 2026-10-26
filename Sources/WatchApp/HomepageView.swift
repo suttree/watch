@@ -56,6 +56,8 @@ struct HomepageView: View {
                     }
                     if filteredStories.isEmpty, !model.isRefreshing {
                         Text(model.feedMode == .favourites ? "No favourites yet. Use the lightning bolt beside a video to save it."
+                             : model.feedMode == .sleep ? "No Sleep videos yet. Open a video's Sections menu and tick Sleep. It will stay in All too."
+                             : model.feedMode == .eat ? "No Eat videos yet. Open a video's Sections menu and tick Eat. It will stay in All too."
                              : model.feedMode == .deleted ? "No deleted items."
                              : model.feedMode == .youtube
                              ? "No YouTube videos or Instagram posts in your Firefox tv folder."
@@ -86,6 +88,10 @@ struct HomepageView: View {
                                     isActive: story.id == activeVideoID,
                                     isFavourite: model.isFavourite(story),
                                     toggleFavourite: { model.toggleFavourite(story) },
+                                    sections: VideoSection.allCases.filter { model.isInSection(story, $0) },
+                                    setSection: { section, included in
+                                        model.setSection(section, for: story, included: included)
+                                    },
                                     isFavouritesFeed: model.feedMode == .favourites,
                                     activate: { activate(story) },
                                     remove: {
@@ -141,7 +147,11 @@ struct HomepageView: View {
             }
             .onChange(of: model.feedMode) { reset(proxy) }
             .onChange(of: model.homeRequestID) { reset(proxy) }
-            .onChange(of: filteredStories.count) {
+            .onChange(of: filteredStories.map(\.id)) {
+                if let activeVideoID, !filteredStories.contains(where: { $0.id == activeVideoID }) {
+                    stopPlayback()
+                }
+
                 if currentPage >= pageCount { changePage(pageCount - 1, proxy) }
             }
         }
@@ -225,6 +235,8 @@ private struct FeedBookmarkRow: View {
     let isActive: Bool
     let isFavourite: Bool
     let toggleFavourite: () -> Void
+    let sections: [VideoSection]
+    let setSection: (VideoSection, Bool) -> Void
     let isFavouritesFeed: Bool
     let activate: () -> Void
     let remove: () -> Void
@@ -251,6 +263,24 @@ private struct FeedBookmarkRow: View {
                 .help(video == nil ? "Open original" : "Play here")
 
                 if video != nil {
+                    Menu {
+                        ForEach(VideoSection.allCases, id: \.self) { section in
+                            Toggle(section.title, isOn: Binding(
+                                get: { sections.contains(section) },
+                                set: { setSection(section, $0) }
+                            ))
+                        }
+                        Divider()
+                        Text("Videos stay in All")
+                    } label: {
+                        Label("Sections", systemImage: "folder")
+                            .font(ReaderTheme.sans(12))
+                    }
+                    .fixedSize()
+                    .menuStyle(.borderlessButton)
+                    .accessibilityLabel("Sections for: \(story.title)")
+                    .help("Add to Sleep or Eat. Videos stay in All.")
+
                     Button(action: toggleFavourite) {
                         Image(systemName: isFavourite ? "bolt.fill" : "bolt")
                             .font(.system(size: 15))
@@ -284,6 +314,16 @@ private struct FeedBookmarkRow: View {
                 .accessibilityLabel("Remove from Watch: \(story.title)")
                 .help("Remove from Watch only. Firefox bookmark stays.")
                 }
+            }
+
+            if !sections.isEmpty {
+                HStack(spacing: 12) {
+                    ForEach(sections, id: \.self) { section in
+                        Label(section.title, systemImage: section.symbol)
+                    }
+                }
+                .font(ReaderTheme.sans(12))
+                .foregroundStyle(theme.inkSecondary)
             }
 
             if let video {

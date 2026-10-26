@@ -58,6 +58,41 @@ final class BookmarkLibraryTests: XCTestCase {
         XCTAssertEqual(library.bookmarks.map(\.id), [first.id, second.id])
     }
 
+    func testSectionsSurviveStoreSyncAndCanonicalURLChanges() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = BookmarkLibraryStore(fileURL: directory.appendingPathComponent("library.json"))
+        let video = story("https://www.youtube.com/watch?v=jNas99oEXBU&t=1s")
+        let reel = story("https://www.instagram.com/reel/ABC123/")
+        var library = BookmarkLibrary()
+        library.sync([video, reel])
+        library.setSection(.sleep, for: video, included: true)
+        library.setSection(.eat, for: reel, included: true)
+        try store.save(library)
+        library = try store.load()
+        library.sync([])
+        let changedVideo = story("https://youtu.be/jNas99oEXBU?t=20")
+        let changedReel = story("https://instagram.com/p/ABC123/?utm_source=test")
+        library.sync([changedVideo, changedReel])
+        XCTAssertTrue(library.contains(changedVideo, in: .sleep))
+        XCTAssertTrue(library.contains(changedReel, in: .eat))
+    }
+
+    func testOldLibraryLoadsWithoutLosingBookmarksOrRemovals() throws {
+        let video = story("https://youtu.be/jNas99oEXBU")
+        var library = BookmarkLibrary()
+        library.sync([video])
+        library.remove(video)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(library)) as? [String: Any])
+        json.removeValue(forKey: "sectionKeys")
+        let loaded = try JSONDecoder().decode(BookmarkLibrary.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(loaded.bookmarks, [video])
+        XCTAssertTrue(loaded.isRemoved(video))
+        XCTAssertEqual(loaded.lastSyncedAt, library.lastSyncedAt)
+        XCTAssertFalse(loaded.contains(video, in: .sleep))
+        XCTAssertFalse(loaded.contains(video, in: .eat))
+    }
+
     func testMissingStoreStartsEmptyAndCorruptStoreThrows() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

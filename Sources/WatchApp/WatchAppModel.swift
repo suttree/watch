@@ -64,6 +64,16 @@ final class WatchAppModel: ObservableObject {
         return BookmarkLibraryStore(fileURL: support.appendingPathComponent("Watch/bookmarkLibrary.json"))
     }
 
+    func isInSection(_ story: Story, _ section: VideoSection) -> Bool {
+        library.contains(story, in: section)
+    }
+
+    func setSection(_ section: VideoSection, for story: Story, included: Bool) {
+        var updated = library
+        updated.setSection(section, for: story, included: included)
+        saveLibrary(updated)
+    }
+
     func removeBookmark(_ story: Story) {
         var updated = library
         updated.remove(story)
@@ -329,7 +339,7 @@ final class WatchAppModel: ObservableObject {
 
     /// Bookmark tabs use bookmark date; favourites keep their saved order.
     func visibleStories(from allStories: [Story]) -> [Story] {
-        feedMode == .favourites ? favourites.stories : feedMode.stories(from: allStories, isRemoved: library.isRemoved)
+        feedMode == .favourites ? favourites.stories : feedMode.stories(from: allStories, isRemoved: library.isRemoved, isInSection: isInSection)
     }
 
     /// Feed's ordering before read state is applied — used by `visibleStories`

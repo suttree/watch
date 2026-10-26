@@ -1,12 +1,47 @@
 import Foundation
 
+public enum VideoSection: String, CaseIterable, Codable, Sendable {
+    case sleep
+    case eat
+
+    public var title: String { self == .sleep ? "Sleep" : "Eat" }
+    public var symbol: String { self == .sleep ? "moon" : "fork.knife" }
+}
+
 /// A local snapshot with removals stored independently from Firefox.
 public struct BookmarkLibrary: Codable, Sendable {
     public private(set) var bookmarks: [Story] = []
     public private(set) var removedKeys: Set<String> = []
     public private(set) var lastSyncedAt: Date?
 
+    private var sectionKeys: [String: Set<String>] = [:]
+
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case bookmarks, removedKeys, lastSyncedAt, sectionKeys
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        bookmarks = try values.decode([Story].self, forKey: .bookmarks)
+        removedKeys = try values.decode(Set<String>.self, forKey: .removedKeys)
+        lastSyncedAt = try values.decodeIfPresent(Date.self, forKey: .lastSyncedAt)
+        sectionKeys = try values.decodeIfPresent([String: Set<String>].self, forKey: .sectionKeys) ?? [:]
+    }
+
+    public func contains(_ story: Story, in section: VideoSection) -> Bool {
+        sectionKeys[section.rawValue]?.contains(Self.key(for: story)) == true
+    }
+
+    public mutating func setSection(_ section: VideoSection, for story: Story, included: Bool) {
+        guard let url = URL(string: story.storyURL), BookmarkVideo(url: url) != nil else { return }
+        if included {
+            sectionKeys[section.rawValue, default: []].insert(Self.key(for: story))
+        } else {
+            sectionKeys[section.rawValue]?.remove(Self.key(for: story))
+        }
+    }
 
     public var visibleBookmarks: [Story] {
         bookmarks.filter { !removedKeys.contains(Self.key(for: $0)) }
