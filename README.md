@@ -14,7 +14,7 @@ from the beginning. Progress is not synced to Firefox or YouTube.
 
 - **YouTube:** click a title or thumbnail to play inline, including saved
   timestamps. Only one video plays at a time. Switching tabs or pages stops it.
-- **Sleep and Eat:** use the Sections menu beside a video to add it to either
+- **Sleep and Eat:** use the Sections menu below a video to add it to either
   or both sections. Untick a section to remove it there. Videos stay in All.
   Section choices survive refreshes and restarts.
 - **Other:** all remaining bookmarks, including channel pages and search results.

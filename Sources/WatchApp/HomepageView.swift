@@ -263,24 +263,6 @@ private struct FeedBookmarkRow: View {
                 .help(video == nil ? "Open original" : "Play here")
 
                 if video != nil {
-                    Menu {
-                        ForEach(VideoSection.allCases, id: \.self) { section in
-                            Toggle(section.title, isOn: Binding(
-                                get: { sections.contains(section) },
-                                set: { setSection(section, $0) }
-                            ))
-                        }
-                        Divider()
-                        Text("Videos stay in All")
-                    } label: {
-                        Label("Sections", systemImage: "folder")
-                            .font(ReaderTheme.sans(12))
-                    }
-                    .fixedSize()
-                    .menuStyle(.borderlessButton)
-                    .accessibilityLabel("Sections for: \(story.title)")
-                    .help("Add to Sleep or Eat. Videos stay in All.")
-
                     Button(action: toggleFavourite) {
                         Image(systemName: isFavourite ? "bolt.fill" : "bolt")
                             .font(.system(size: 15))
@@ -314,16 +296,6 @@ private struct FeedBookmarkRow: View {
                 .accessibilityLabel("Remove from Watch: \(story.title)")
                 .help("Remove from Watch only. Firefox bookmark stays.")
                 }
-            }
-
-            if !sections.isEmpty {
-                HStack(spacing: 12) {
-                    ForEach(sections, id: \.self) { section in
-                        Label(section.title, systemImage: section.symbol)
-                    }
-                }
-                .font(ReaderTheme.sans(12))
-                .foregroundStyle(theme.inkSecondary)
             }
 
             if let video {
@@ -393,6 +365,35 @@ private struct FeedBookmarkRow: View {
             } else {
                 Text(url?.host ?? story.sourceName)
                     .font(ReaderTheme.sans(12)).foregroundStyle(theme.inkSecondary)
+            }
+
+            if video != nil {
+                HStack(spacing: 12) {
+                    Menu {
+                        ForEach(VideoSection.allCases, id: \.self) { section in
+                            Toggle(section.title, isOn: Binding(
+                                get: { sections.contains(section) },
+                                set: { setSection(section, $0) }
+                            ))
+                        }
+                        Divider()
+                        Text("Videos stay in All")
+                    } label: {
+                        Label("Sections", systemImage: "folder")
+                            .font(ReaderTheme.sans(12))
+                    }
+                    .fixedSize()
+                    .menuStyle(.borderlessButton)
+                    .accessibilityLabel("Sections for: \(story.title)")
+                    .help("Add to Sleep or Eat. Videos stay in All.")
+
+                    Spacer(minLength: 12)
+                    ForEach(sections, id: \.self) { section in
+                        Label(section.title, systemImage: section.symbol)
+                            .foregroundStyle(theme.inkSecondary)
+                    }
+                }
+                .font(ReaderTheme.sans(12))
             }
 
             Rectangle().fill(theme.rule).frame(height: 1).padding(.top, 12)
