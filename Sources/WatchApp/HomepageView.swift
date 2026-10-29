@@ -56,8 +56,8 @@ struct HomepageView: View {
                     }
                     if filteredStories.isEmpty, !model.isRefreshing {
                         Text(model.feedMode == .favourites ? "No favourites yet. Use the lightning bolt beside a video to save it."
-                             : model.feedMode == .sleep ? "No Sleep videos yet. Open a video's Sections menu and tick Sleep. It will stay in All too."
-                             : model.feedMode == .eat ? "No Eat videos yet. Open a video's Sections menu and tick Eat. It will stay in All too."
+                             : model.feedMode == .sleep ? "No Sleep videos yet. Click the moon beneath a video to add it. It will stay in All too."
+                             : model.feedMode == .eat ? "No Eat videos yet. Click the cutlery beneath a video to add it. It will stay in All too."
                              : model.feedMode == .deleted ? "No deleted items."
                              : model.feedMode == .youtube
                              ? "No YouTube videos or Instagram posts in your Firefox tv folder."
@@ -368,32 +368,33 @@ private struct FeedBookmarkRow: View {
             }
 
             if video != nil {
-                HStack(spacing: 12) {
-                    Menu {
-                        ForEach(VideoSection.allCases, id: \.self) { section in
-                            Toggle(section.title, isOn: Binding(
-                                get: { sections.contains(section) },
-                                set: { setSection(section, $0) }
-                            ))
+                HStack(spacing: 8) {
+                    ForEach(VideoSection.allCases, id: \.self) { section in
+                        let isIncluded = sections.contains(section)
+                        Button {
+                            setSection(section, !isIncluded)
+                        } label: {
+                            Image(systemName: section.symbol)
+                                .font(.system(size: 15, weight: isIncluded ? .semibold : .regular))
+                                .foregroundStyle(isIncluded ? theme.ink : theme.inkSecondary)
+                                .frame(width: 34, height: 32)
+                                .background(isIncluded ? theme.ink.opacity(0.12) : Color.clear,
+                                            in: RoundedRectangle(cornerRadius: 6))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .strokeBorder(isIncluded ? theme.ink : theme.rule,
+                                                      lineWidth: isIncluded ? 1.5 : 1)
+                                }
+                                .contentShape(RoundedRectangle(cornerRadius: 6))
                         }
-                        Divider()
-                        Text("Videos stay in All")
-                    } label: {
-                        Label("Sections", systemImage: "folder")
-                            .font(ReaderTheme.sans(12))
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) for: \(story.title)")
+                        .accessibilityValue(isIncluded ? "On" : "Off")
+                        .accessibilityAddTraits(isIncluded ? [.isSelected] : [])
+                        .help(isIncluded ? "Remove from \(section.title)" : "Add to \(section.title). Videos stay in All.")
                     }
-                    .fixedSize()
-                    .menuStyle(.borderlessButton)
-                    .accessibilityLabel("Sections for: \(story.title)")
-                    .help("Add to Sleep or Eat. Videos stay in All.")
-
-                    Spacer(minLength: 12)
-                    ForEach(sections, id: \.self) { section in
-                        Label(section.title, systemImage: section.symbol)
-                            .foregroundStyle(theme.inkSecondary)
-                    }
+                    Spacer(minLength: 0)
                 }
-                .font(ReaderTheme.sans(12))
             }
 
             Rectangle().fill(theme.rule).frame(height: 1).padding(.top, 12)
