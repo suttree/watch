@@ -65,7 +65,6 @@ struct HomepageView: View {
                             .foregroundStyle(theme.inkSecondary)
                             .padding(.vertical, 40)
                     } else {
-                        if pageCount > 1 { pagination(proxy) }
                         VStack(spacing: 24) {
                             ForEach(page) { story in
                                 if model.feedMode == .deleted {
