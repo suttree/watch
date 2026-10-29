@@ -369,6 +369,7 @@ private struct FeedBookmarkRow: View {
 
             if video != nil {
                 HStack(spacing: 8) {
+                    Spacer(minLength: 0)
                     ForEach(VideoSection.allCases, id: \.self) { section in
                         let isIncluded = sections.contains(section)
                         Button {
@@ -393,7 +394,6 @@ private struct FeedBookmarkRow: View {
                         .accessibilityAddTraits(isIncluded ? [.isSelected] : [])
                         .help(isIncluded ? "Remove from \(section.title)" : "Add to \(section.title). Videos stay in All.")
                     }
-                    Spacer(minLength: 0)
                 }
             }
 
