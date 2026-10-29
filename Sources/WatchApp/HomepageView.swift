@@ -243,6 +243,9 @@ private struct FeedBookmarkRow: View {
     @Environment(\.readerTheme) private var theme
     @State private var playbackError: String?
 
+    private let sectionFill = Color(red: 0.61, green: 0.86, blue: 0.76)
+    private let sectionInk = Color(red: 0.15, green: 0.42, blue: 0.35)
+
     private var url: URL? { URL(string: story.storyURL) }
     private var video: BookmarkVideo? { url.flatMap(BookmarkVideo.init) }
     private var isInstagram: Bool {
@@ -377,13 +380,13 @@ private struct FeedBookmarkRow: View {
                         } label: {
                             Image(systemName: section.symbol)
                                 .font(.system(size: 15, weight: isIncluded ? .semibold : .regular))
-                                .foregroundStyle(isIncluded ? theme.ink : theme.inkSecondary)
+                                .foregroundStyle(sectionInk.opacity(isIncluded ? 1 : 0.75))
                                 .frame(width: 34, height: 32)
-                                .background(isIncluded ? theme.ink.opacity(0.12) : Color.clear,
+                                .background(sectionFill.opacity(isIncluded ? 1 : 0.2),
                                             in: RoundedRectangle(cornerRadius: 6))
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 6)
-                                        .strokeBorder(isIncluded ? theme.ink : theme.rule,
+                                        .strokeBorder(sectionInk.opacity(isIncluded ? 0.85 : 0.3),
                                                       lineWidth: isIncluded ? 1.5 : 1)
                                 }
                                 .contentShape(RoundedRectangle(cornerRadius: 6))
