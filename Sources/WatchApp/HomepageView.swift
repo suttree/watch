@@ -65,7 +65,7 @@ struct HomepageView: View {
                             .foregroundStyle(theme.inkSecondary)
                             .padding(.vertical, 40)
                     } else {
-                        VStack(spacing: 24) {
+                        VStack(spacing: 64) {
                             ForEach(page) { story in
                                 if model.feedMode == .deleted {
                                     HStack(spacing: 12) {
@@ -104,6 +104,7 @@ struct HomepageView: View {
                                 }
                             }
                         }
+                        .padding(.top, 20)
                         if pageCount > 1 { pagination(proxy) }
                     }
                 }
@@ -399,7 +400,6 @@ private struct FeedBookmarkRow: View {
                 }
             }
 
-            Rectangle().fill(theme.rule).frame(height: 1).padding(.top, 12)
         }
         .frame(maxWidth: isInstagram ? 360 : .infinity)
         .padding(8)
