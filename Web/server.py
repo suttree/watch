@@ -50,6 +50,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, self.server.state)
         assets = {'/': ('index.html', 'text/html; charset=utf-8'),
                   '/app.js': ('app.js', 'text/javascript'),
+                  '/favicon.png': ('favicon.png', 'image/png'),
+                  '/favicon.ico': ('favicon.png', 'image/png'),
                   '/style.css': ('style.css', 'text/css')}
         if self.path not in assets:
             return self.reply(404, {'error': 'Not found'})
