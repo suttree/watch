@@ -115,7 +115,11 @@ function render() {
     const title = card.querySelector('.title'); title.textContent = story.title; title.onclick = () => play(story, media);
     card.querySelector('.original').href = safeURL(story.storyURL);
     const actions = card.querySelector('.actions');
-    actions.append(button(library.favourites[key] ? '★ Saved' : '☆ Favourite', () => change({kind:'favourite', key, id:story.id})));
+    const favourite = button(library.favourites[key] ? '★' : '☆', () => change({kind:'favourite', key, id:story.id}));
+    favourite.setAttribute('aria-label', `Favourite: ${story.title}`);
+    favourite.setAttribute('aria-pressed', String(!!library.favourites[key]));
+    favourite.title = library.favourites[key] ? 'Remove from favourites' : 'Add to favourites';
+    actions.append(favourite);
     if (v && mode !== 'Deleted') for (const section of ['sleep','eat']) {
       const included = (library.sectionKeys[section] || []).includes(key);
       const name = section === 'sleep' ? 'Sleep' : 'Eat';
@@ -133,7 +137,9 @@ function render() {
       icon.append(path); toggle.append(icon); actions.append(toggle);
     }
     const removed = library.removedKeys.includes(key);
-    actions.append(button(removed ? 'Restore' : 'Remove', () => change({kind:'removed', key, enabled:!removed})));
+    const removal = button(removed ? 'Restore' : 'Remove', () => change({kind:'removed', key, enabled:!removed}));
+    if (!removed) removal.className = 'remove-link';
+    actions.append(removal);
     $('#feed').append(card);
   }
   if (!stories.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = query ? 'No matching bookmarks.' : 'No bookmarks here. Refresh Firefox to import your tv folder.'; $('#feed').append(empty); }
