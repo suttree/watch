@@ -117,8 +117,20 @@ function render() {
     const actions = card.querySelector('.actions');
     actions.append(button(library.favourites[key] ? '★ Saved' : '☆ Favourite', () => change({kind:'favourite', key, id:story.id})));
     if (v && mode !== 'Deleted') for (const section of ['sleep','eat']) {
-      const label = document.createElement('label'), input = document.createElement('input'); input.type = 'checkbox'; input.checked = (library.sectionKeys[section] || []).includes(key);
-      input.onchange = () => change({kind:section, key, enabled:input.checked}); label.append(input, section === 'sleep' ? 'Sleep' : 'Eat'); actions.append(label);
+      const included = (library.sectionKeys[section] || []).includes(key);
+      const name = section === 'sleep' ? 'Sleep' : 'Eat';
+      const toggle = button('', () => change({kind:section, key, enabled:!included}));
+      toggle.className = 'section-toggle';
+      toggle.setAttribute('aria-label', `${name} for: ${story.title}`);
+      toggle.setAttribute('aria-pressed', String(included));
+      toggle.title = included ? `Remove from ${name}` : `Add to ${name}. Videos stay in All.`;
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', section === 'sleep'
+        ? 'M20.5 14.5A9 9 0 0 1 9.5 3.5a9 9 0 1 0 11 11Z'
+        : 'M5 3v6m3-6v6m3-6v6M5 7h6M8 9v12M19 3c-3 3-4 7-4 10h4m0-10v18');
+      icon.append(path); toggle.append(icon); actions.append(toggle);
     }
     const removed = library.removedKeys.includes(key);
     actions.append(button(removed ? 'Restore' : 'Remove', () => change({kind:'removed', key, enabled:!removed})));
