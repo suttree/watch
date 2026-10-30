@@ -59,3 +59,36 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-sa
 Set `WATCH_VERIFY_FIREFOX=1` to also test a snapshot of your local `tv` folder.
 The normal suite tests bookmark handling with temporary fixtures and checks
 transparency in both icon colour variants.
+
+## Local web app
+
+Run Watch in your browser with:
+
+```sh
+./Scripts/run-web.sh
+```
+
+Open <http://127.0.0.1:8765> in your usual browser. Keep the terminal running;
+press Control-C to stop the server. Requires Python 3 and Xcode. The launcher
+builds the small Firefox importer using the existing WatchCore code.
+
+The first launch reads the native Watch library, favourites, removed items and
+Sleep/Eat sections. Web changes are saved separately in `Web/.local/library.json`.
+The web app never writes the native library or Firefox bookmarks. Refresh Firefox
+imports the current `tv` folder while preserving web favourites and sections.
+Search, 15-item pages, favourites, sections, removal and restore work locally.
+YouTube playback positions are saved every five seconds and on pause, separately
+from the native app. Only one embed stays open at a time.
+
+The server listens only on this computer. Use the exact address above, including
+`127.0.0.1`. YouTube and Instagram embeds still contact their respective services.
+A regular browser avoids the native app's separate WebKit session, but YouTube
+can still reject embeds or require sign-in. The arrow beside a title opens the
+original video. Opening the HTML file directly is not supported because embeds
+need an HTTP page origin and the library needs the local server.
+
+Run the server checks with:
+
+```sh
+python3 -m unittest discover -s Web -p 'test_*.py'
+```

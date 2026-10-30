@@ -3,3 +3,5 @@
 DerivedData/
 *.xcuserdata/
 .DS_Store
+Web/.local/
+__pycache__/

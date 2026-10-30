@@ -9,10 +9,12 @@ let package = Package(
     ],
     products: [
         .library(name: "WatchCore", targets: ["WatchCore"]),
-        .executable(name: "WatchApp", targets: ["WatchApp"])
+        .executable(name: "WatchApp", targets: ["WatchApp"]),
+        .executable(name: "WatchExport", targets: ["WatchExport"])
     ],
     targets: [
         .target(name: "WatchCore"),
+        .executableTarget(name: "WatchExport", dependencies: ["WatchCore"]),
         .executableTarget(
             name: "WatchApp",
             dependencies: ["WatchCore"],
